@@ -9,16 +9,18 @@ import unitRoute from './src/routes/unitRoute.js';
 import tenant from './src/routes/tenantRoute.js'
 import contractRoute from './src/routes/contractRoute.js'
 
-
-
 import globalErrorHandler from "./src/middleware/errorMiddleware.js";
-
+import cors from 'cors';
 
 
 
 
 const app = express();
 dbConnction();
+app.use(cors({
+    origin: "*"
+}));
+
 
 app.use(express.json());
 
