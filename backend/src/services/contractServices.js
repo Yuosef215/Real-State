@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import TenantModel from '../models/tenant.js';
 import UnitModel from '../models/unit.js';
 import ContractModel from '../models/contract.js';
+import PropertyModel from '../models/property.js';
 
 
 

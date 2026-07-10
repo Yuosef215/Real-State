@@ -1,6 +1,7 @@
 import PropertyModel from '../models/property.js';
 import ApiError from '../utils/apiError.js';
 import asyncHandler from 'express-async-handler';
+import UnitModel from '../models/unit.js';
 
 
 
@@ -18,11 +19,25 @@ export const createProperty = asyncHandler(async (req, res) => {
 
 export const getAllProperties = asyncHandler(async (req, res) => {
     const properties = await PropertyModel.find();
+
+    const data = await Promise.all(
+        properties.map(async (property) => {
+            const totalUnits = await UnitModel.countDocuments({
+                property: property._id,
+            });
+
+            return {
+                ...property.toObject(),
+                totalUnits,
+            };
+        })
+    );
+
     res.status(200).json({
         success: true,
-        total: properties.length,
+        total: data.length,
         message: "تم جلب جميع العقارات بنجاح",
-        data: properties
+        data,
     });
 });
 

@@ -4,14 +4,17 @@ import {
     getAllUnits,
     getUnitById,
     updateUnit,
-    deleteUnit
+    deleteUnit,
+    getUnitsByProperty
 } from '../services/unitServices.js';
+
 
 const router = express.Router();
 
 router.post('/create_units/:propertyId', createUnit);
 router.get('/getAll_units', getAllUnits);
 router.get('/getUnit/:id', getUnitById);
+router.get("/property/:propertyId", getUnitsByProperty);
 router.put('/update_unit/:id', updateUnit);
 router.delete('/delete_unit/:id', deleteUnit);
 

@@ -14,6 +14,7 @@ const router = express.Router();
 
 
 
+
 router.post("/create_contract",createContract);
 router.get("/get_contract",getAllContracts);
 router.get("/get_contract/:id",getContractById);

@@ -22,9 +22,15 @@ const UnitSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-    versionKey: false
+    versionKey: false,
+    toJSON: { virtuals: true },
+        toObject: { virtuals: true },
 });
-
+UnitSchema.virtual("contracts", {
+    ref: "Contract",
+    localField: "_id",
+    foreignField: "unit",
+});
 UnitSchema.index(
     { property: 1, floor: 1, unitNumber: 1 },
     { unique: true }

@@ -27,12 +27,26 @@ export const createUnit = asyncHandler(async (req, res, next) => {
 });
 
 export const getAllUnits = asyncHandler(async (req, res) => {
-    const units = await UnitModel.find().populate('property');
+    const units = await UnitModel.find().populate('property').populate('contracts');
     res.status(200).json({
         status: "success",
         results: units.length,
         data: units
     });
+});
+export const getUnitsByProperty = asyncHandler(async (req, res) => {
+  const { propertyId } = req.params;
+
+  const units = await UnitModel.find({
+    property: propertyId,
+    status: "متاحه",
+  }).populate("property");
+
+  res.status(200).json({
+    success: true,
+    results: units.length,
+    data: units,
+  });
 });
 
 export const getUnitById = asyncHandler(async (req, res, next) => {
