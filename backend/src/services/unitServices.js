@@ -12,7 +12,7 @@ export const createUnit = asyncHandler(async (req, res, next) => {
     const unit = await UnitModel.create({
         property: propertyId,
         unitNumber,
-        status,
+        status: 'متاحه',
         floor
     });
     const property = await PropertyModel.findById(propertyId);
@@ -36,7 +36,7 @@ export const getAllUnits = asyncHandler(async (req, res) => {
 });
 export const getUnitsByProperty = asyncHandler(async (req, res) => {
   const { propertyId } = req.params;
-
+console.log(req.params.propertyId);
   const units = await UnitModel.find({
     property: propertyId,
     status: "متاحه",

@@ -1,26 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { FaPrint } from "react-icons/fa6";
 import { FaHome } from "react-icons/fa";
 import { MdRealEstateAgent } from "react-icons/md";
 import { PiBuildingApartmentFill } from "react-icons/pi";
 import { IoIosPeople } from "react-icons/io";
 import { LiaFileContractSolid } from "react-icons/lia";
-import { MdPayments } from "react-icons/md"
+import { MdPayments } from "react-icons/md";
 
 // ====== إعدادات الـ API ======
 const API_BASE_URL = "http://localhost:5000/api/v1";
 const PAYMENTS_BASE = `${API_BASE_URL}/payments`;
 const CONTRACTS_BASE = `${API_BASE_URL}/contracts`;
 
+// ====== اسم الشركة الظاهر على الوصل ======
+const COMPANY_NAME = 'مؤسسه الشروق 3';
+
 const size = 25;
 const NAV_ITEMS = [
-  { label: 'الرئيسية', path: '/dashboard', icon: <FaHome size={size} color='black' /> },
-  { label: 'العقارات', path: '/properties', icon: <MdRealEstateAgent size={size} color='black' /> },
-  { label: 'الوحدات', path: '/units', icon: <PiBuildingApartmentFill size={size} color='black' /> },
-  { label: 'المستأجرين', path: '/tenants', icon: <IoIosPeople size={size} color='black' /> },
-  { label: 'العقود', path: '/contracts', icon: <LiaFileContractSolid size={size} color='black' /> },
-  { label: 'الدفع', path: '/payments', icon: <MdPayments size={size} color='black' /> },
+  { label: 'الرئيسية', path: '/dashboard', icon: <FaHome size={size} color='black'/> },
+  { label: 'العقارات', path: '/properties', icon: <MdRealEstateAgent size={size} color='black'/> },
+  { label: 'الوحدات', path: '/units', icon:  <PiBuildingApartmentFill size={size} color='black'/>},
+  { label: 'المستأجرين', path: '/tenants', icon: <IoIosPeople size={size} color='black'/> },
+  { label: 'العقود', path: '/contracts', icon: <LiaFileContractSolid size={size} color='black'/>},
+  { label: 'الدفع', path: '/payments', icon: <MdPayments size={size} color='black'/>},
 ];
 
 const PAYMENT_STATUSES = [
@@ -68,10 +72,80 @@ function Payments() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const contractLabel = (id) => {
-    const c = contracts.find((c) => (c._id || c.id) === id);
-    if (!c) return '—';
-    return `عقد #${(c._id || c.id).toString().slice(-5)}`;
+  // بيانات العقد/المستأجر/الوحدة بترجع populate جوا الدفعة نفسها
+  const getContractInfo = (payment) => {
+    const contract = payment.contract || contracts.find((c) => (c._id || c.id) === payment.contractId);
+    return {
+      tenantName: contract?.tenant?.name || '—',
+      unitNumber: contract?.unit?.unitNumber ?? '—',
+      propertyName: contract?.unit?.property?.name || '—',
+      contractLabel: contract ? `عقد #${(contract._id || contract.id).toString().slice(-5)}` : '—',
+    };
+  };
+
+  const printReceipt = (payment) => {
+    const info = getContractInfo(payment);
+    const receiptWindow = window.open('', '_blank', 'width=420,height=600');
+
+    const receiptHtml = `
+      <!DOCTYPE html>
+      <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>وصل دفع</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+          body { padding: 24px; color: #1e293b; }
+          .receipt { max-width: 360px; margin: 0 auto; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+          .header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px dashed #cbd5e1; }
+          .header h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+          .header p { font-size: 12px; color: #94a3b8; }
+          .row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13.5px; border-bottom: 1px solid #f1f5f9; }
+          .row span:first-child { color: #64748b; }
+          .row span:last-child { font-weight: 600; }
+          .amount-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; text-align: center; margin: 16px 0; }
+          .amount-box p { font-size: 12px; color: #15803d; margin-bottom: 4px; }
+          .amount-box h2 { font-size: 24px; color: #15803d; font-weight: 800; }
+          .footer { text-align: center; margin-top: 20px; padding-top: 16px; border-top: 2px dashed #cbd5e1; font-size: 11px; color: #94a3b8; }
+          @media print {
+            body { padding: 0; }
+            .receipt { border: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <div class="header">
+            <h1>${COMPANY_NAME}</h1>
+            <p>وصل استلام دفعة إيجار</p>
+          </div>
+
+          <div class="row"><span>المستأجر</span><span>${info.tenantName}</span></div>
+          <div class="row"><span>العقار</span><span>${info.propertyName}</span></div>
+          <div class="row"><span>الوحدة</span><span>شقة ${info.unitNumber}</span></div>
+          <div class="row"><span>الطابق</span><span>شقة ${info.floor}</span></div>
+          <div class="row"><span>تاريخ الدفع</span><span>${payment.paymentDate?.substring(0, 10) || '—'}</span></div>
+          <div class="row"><span>طريقة الدفع</span><span>${payment.paymentMethod || 'نقدي'}</span></div>
+
+          <div class="amount-box">
+            <p>المبلغ المدفوع</p>
+            <h2>${payment.contract.monthlyRent} ج.م</h2>
+          </div>
+
+          <div class="footer">
+            <p>شكراً لتعاملكم معنا</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    receiptWindow.document.write(receiptHtml);
+    receiptWindow.document.close();
+    receiptWindow.focus();
+    receiptWindow.onload = () => {
+      receiptWindow.print();
+    };
   };
 
   const fetchAll = async () => {
@@ -139,9 +213,11 @@ function Payments() {
 
     setSaving(true);
     const payload = {
-      contract: form.contractId,
-      amountPaid: Number(form.amount),
+      contractId: form.contractId,
+      amount: Number(form.amount),
       paymentDate: form.paymentDate,
+      paymentMethod: 'نقدي',
+      status: form.status,
     };
 
     try {
@@ -199,8 +275,9 @@ function Payments() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-sm font-medium transition-colors ${active ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-sm font-medium transition-colors ${
+                  active ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
+                }`}
               >
                 <span className="text-lg">{item.icon}</span>
                 {item.label}
@@ -247,31 +324,43 @@ function Payments() {
             <>
               {/* ===== عرض كروت في الموبايل ===== */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-3">
-                {payments.map((p) => (
-                  <div key={p._id || p.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-bold text-slate-800">{p.contract.unit.property.name}</h3>
-                      <h4 className='font-bold text-slate-800'>{p.contract.tenant.name}</h4>
-
+                {payments.map((p) => {
+                  const info = getContractInfo(p);
+                  return (
+                    <div key={p._id || p.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-bold text-slate-800">{info.tenantName}</h3>
+                        <span className={`text-xs px-2 py-1 rounded-full ${statusColor(p.status)}`}>
+                          {statusLabel(p.status)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-500 mb-1">🏠 {info.propertyName} - شقة {info.unitNumber}</p>
+                      <p className="text-sm text-slate-500 mb-1">💰 {Number(p.amount).toLocaleString('ar-EG')} ج.م</p>
+                      <p className="text-sm text-slate-500 mb-1">📅 {p.paymentDate?.substring(0, 10)}</p>
+                      <p className="text-sm text-slate-500 mb-3">💳 {p.paymentMethod || 'نقدي'}</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => printReceipt(p)}
+                          className="flex-1 text-sm font-medium text-slate-600 bg-slate-100 py-2 rounded-lg flex items-center justify-center gap-1"
+                        >
+                          🖨️ طباعة
+                        </button>
+                        <button
+                          onClick={() => openEditModal(p)}
+                          className="flex-1 text-sm font-medium text-blue-600 bg-blue-50 py-2 rounded-lg"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(p)}
+                          className="flex-1 text-sm font-medium text-red-600 bg-red-50 py-2 rounded-lg"
+                        >
+                          حذف
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-sm text-slate-500 mb-1">💰 {p.contract.monthlyRent} ج.م</p>
-                    <p className="text-sm text-slate-500 mb-1">📅 {p.paymentDate?.substring(0, 10)}</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEditModal(p)}
-                        className="flex-1 text-sm font-medium text-blue-600 bg-blue-50 py-2 rounded-lg"
-                      >
-                        تعديل
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(p)}
-                        className="flex-1 text-sm font-medium text-red-600 bg-red-50 py-2 rounded-lg"
-                      >
-                        حذف
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* ===== جدول في الديسكتوب ===== */}
@@ -279,38 +368,49 @@ function Payments() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-right">
-                      <th className="py-3 px-5 font-semibold">العقد</th>
                       <th className="py-3 px-5 font-semibold">المستأجر</th>
+                      <th className="py-3 px-5 font-semibold">العقار / الوحدة</th>
                       <th className="py-3 px-5 font-semibold">المبلغ</th>
                       <th className="py-3 px-5 font-semibold">تاريخ الدفع</th>
+                      <th className="py-3 px-5 font-semibold">طريقة الدفع</th>
                       <th className="py-3 px-5 font-semibold">إجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {payments.map((p) => (
-                      <tr key={p._id || p.id} className="border-t border-slate-100 hover:bg-slate-50">
-                        <td className="py-3 px-5 font-medium text-slate-800">{p.contract.unit.property.name}</td>
-                        <td className="py-3 px-5 font-medium text-slate-800">{p.contract.tenant.name}</td>
-                        <td className="py-3 px-5 text-slate-600">{p.amountPaid} ج.م</td>
-                        <td className="py-3 px-5 text-slate-600">{p.paymentDate?.substring(0, 10)}</td>
-                        <td className="py-3 px-5">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => openEditModal(p)}
-                              className="text-blue-600 hover:underline font-medium"
-                            >
-                              تعديل
-                            </button>
-                            <button
-                              onClick={() => setDeleteTarget(p)}
-                              className="text-red-600 hover:underline font-medium"
-                            >
-                              حذف
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {payments.map((p) => {
+                      const info = getContractInfo(p);
+                      return (
+                        <tr key={p._id || p.id} className="border-t border-slate-100 hover:bg-slate-50">
+                          <td className="py-3 px-5 font-medium text-slate-800">{info.tenantName}</td>
+                          <td className="py-3 px-5 text-slate-600">{info.propertyName} - شقة {info.unitNumber}</td>
+                          <td className="py-3 px-5 text-slate-600">{p.contract.monthlyRent} ج.م</td>
+                          <td className="py-3 px-5 text-slate-600">{p.paymentDate?.substring(0, 10)}</td>
+                          <td className="py-3 px-5 text-slate-600">{p.paymentMethod || 'نقدي'}</td>
+                          <td className="py-3 px-5">
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => printReceipt(p)}
+                                className="text-slate-600 hover:underline font-medium"
+                              >
+                                <span><FaPrint /></span> طباعة
+                              </button>
+                              <button
+                                onClick={() => openEditModal(p)}
+                                className="text-blue-600 hover:underline font-medium"
+                              >
+                                تعديل
+                              </button>
+                              <button
+                                onClick={() => setDeleteTarget(p)}
+                                className="text-red-600 hover:underline font-medium"
+                              >
+                                حذف
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -327,8 +427,9 @@ function Payments() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium min-w-[55px] shrink-0 ${active ? 'text-blue-600' : 'text-slate-500'
-                }`}
+              className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium min-w-[55px] shrink-0 ${
+                active ? 'text-blue-600' : 'text-slate-500'
+              }`}
             >
               <span className="text-lg">{item.icon}</span>
               {item.label}
@@ -354,32 +455,22 @@ function Payments() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  العقد
-                </label>
-
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">العقد</label>
                 <select
                   value={form.contractId}
-                  onChange={(e) =>
-                    setForm({ ...form, contractId: e.target.value })
-                  }
-                  className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${formErrors.contractId
-                    ? "border-red-500"
-                    : "border-slate-200 focus:border-blue-600"
-                    }`} >
+                  onChange={(e) => setForm({ ...form, contractId: e.target.value })}
+                  className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
+                    formErrors.contractId ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
+                  }`}
+                >
                   <option value="">اختر العقد</option>
                   {contracts.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      عقد {c.tenant?.name} - شقة {c.unit?.unitNumber}
+                    <option key={c._id || c.id} value={c._id || c.id}>
+                      عقد #{(c._id || c.id).toString().slice(-5)}
                     </option>
                   ))}
                 </select>
-
-                {formErrors.contractId && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {formErrors.contractId}
-                  </p>
-                )}
+                {formErrors.contractId && <p className="text-red-500 text-xs mt-1">{formErrors.contractId}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -390,8 +481,9 @@ function Payments() {
                     min="1"
                     value={form.amount}
                     onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${formErrors.amount ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
-                      }`}
+                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
+                      formErrors.amount ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
+                    }`}
                     placeholder="0"
                   />
                   {formErrors.amount && <p className="text-red-500 text-xs mt-1">{formErrors.amount}</p>}
@@ -403,13 +495,36 @@ function Payments() {
                     type="date"
                     value={form.paymentDate}
                     onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${formErrors.paymentDate ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
-                      }`}
+                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
+                      formErrors.paymentDate ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
+                    }`}
                   />
                   {formErrors.paymentDate && <p className="text-red-500 text-xs mt-1">{formErrors.paymentDate}</p>}
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">طريقة الدفع</label>
+                <input
+                  type="text"
+                  value="نقدي"
+                  disabled
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm bg-slate-50 text-slate-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">حالة الدفعة</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600"
+                >
+                  {PAYMENT_STATUSES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <button

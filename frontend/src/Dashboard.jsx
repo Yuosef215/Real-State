@@ -57,7 +57,7 @@ function Dashboard() {
   const cards = stats
     ? [
         { label: 'إجمالي العقارات', value: stats.totalProperties, icon: '🏢', color: 'bg-blue-50 text-blue-600' },
-        { label: 'إجمالي الوحدات', value: stats.totalUnits, icon: '🏘️', color: 'bg-indigo-50 text-indigo-600' },
+        { label: 'إجمالي الشقق', value: stats.totalUnits, icon: '🏘️', color: 'bg-indigo-50 text-indigo-600' },
         { label: 'الوحدات المتاحة', value: stats.availableUnits, icon: '🔓', color: 'bg-green-50 text-green-600' },
         { label: 'الوحدات المؤجرة', value: stats.rentedUnits, icon: '🔒', color: 'bg-amber-50 text-amber-600' },
         { label: 'إجمالي المستأجرين', value: stats.totalTenants, icon: '👥', color: 'bg-purple-50 text-purple-600' },

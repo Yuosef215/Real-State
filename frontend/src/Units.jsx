@@ -23,8 +23,8 @@ const NAV_ITEMS = [
 ];
 
 const UNIT_STATUSES = [
-  { value: 'available', label: 'متاحة' },
-  { value: 'rented', label: 'مؤجرة' },
+  { value: 'متاحه', label: 'متاحه' },
+  { value: 'مستأجره', label: 'مستأجره' },
 ];
 
 function statusLabel(value) {
@@ -42,7 +42,7 @@ const EMPTY_FORM = {
   floor: '',
   area: '',
   monthlyRent: '',
-  status: 'available',
+  status: 'متاحه',
   propertyId: '',
 };
 
@@ -112,7 +112,7 @@ function Units() {
       floor: unit.floor ?? '',
       area: unit.area ?? '',
       monthlyRent: unit.monthlyRent ?? '',
-      status: unit.status || 'available',
+      status: unit.status || 'متاحه',
       propertyId: unit.propertyId || unit.property || '',
     });
     setFormErrors({});
@@ -417,37 +417,6 @@ function Units() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">المساحة (م²)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.area}
-                    onChange={(e) => setForm({ ...form, area: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
-                      formErrors.area ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
-                    }`}
-                    placeholder="0"
-                  />
-                  {formErrors.area && <p className="text-red-500 text-xs mt-1">{formErrors.area}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">الإيجار الشهري</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.monthlyRent}
-                    onChange={(e) => setForm({ ...form, monthlyRent: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
-                      formErrors.monthlyRent ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
-                    }`}
-                    placeholder="0"
-                  />
-                  {formErrors.monthlyRent && <p className="text-red-500 text-xs mt-1">{formErrors.monthlyRent}</p>}
-                </div>
-              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">الحالة</label>

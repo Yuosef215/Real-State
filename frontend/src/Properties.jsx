@@ -84,7 +84,7 @@ function Properties() {
       name: property.name || '',
       address: property.address || '',
       type: property.type || 'سكني',
-      unitsCount: property.totalUnits ?? '',
+      unitsCount: property.totalUnits || '',
       description: property.description || '',
     });
     setFormErrors({});
@@ -101,8 +101,6 @@ function Properties() {
     const errs = {};
     if (!form.name.trim()) errs.name = 'اسم العقار مطلوب';
     if (!form.address.trim()) errs.address = 'العنوان مطلوب';
-    if (!form.unitsCount || Number(form.unitsCount) <= 0) errs.unitsCount = 'أدخل عدد وحدات صحيح';
-    if (!form.ownerId.trim()) errs.ownerId = 'رقم المالك مطلوب';
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -113,13 +111,11 @@ function Properties() {
 
     setSaving(true);
     const payload = {
-      name: form.name.trim(),
-      address: form.address.trim(),
-      type: form.type,
-      unitsCount: Number(form.unitsCount),
-      ownerId: form.ownerId.trim(),
-      description: form.description.trim(),
-    };
+  name: form.name.trim(),
+  address: form.address.trim(),
+  totalUnits: Number(form.unitsCount),
+  description: form.description.trim(),
+};
 
     try {
       if (editingId) {
