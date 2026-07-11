@@ -8,6 +8,9 @@ import { PiBuildingApartmentFill } from "react-icons/pi";
 import { IoIosPeople } from "react-icons/io";
 import { LiaFileContractSolid } from "react-icons/lia";
 import { MdPayments } from "react-icons/md";
+import { FaMoneyBill } from "react-icons/fa";
+import { FaCalendar } from "react-icons/fa";
+import { FaCreditCard } from "react-icons/fa";
 
 // ====== إعدادات الـ API ======
 const API_BASE_URL = "http://localhost:5000/api/v1";
@@ -87,6 +90,11 @@ function Payments() {
     const info = getContractInfo(payment);
     const receiptWindow = window.open('', '_blank', 'width=420,height=600');
 
+    // المتبقي من المدة المتبقية بين تاريخ اليوم وتاريخ انتهاء العقد بي الشهر
+    const today = new Date();
+    const endDate = new Date(payment.contract.endDate);
+    const remainingTime = endDate > today ? Math.ceil((endDate - today) / (1000 * 60 * 60 * 24 * 30)) : 0;
+
     const receiptHtml = `
       <!DOCTYPE html>
       <html lang="ar" dir="rtl">
@@ -123,8 +131,10 @@ function Payments() {
           <div class="row"><span>المستأجر</span><span>${info.tenantName}</span></div>
           <div class="row"><span>العقار</span><span>${info.propertyName}</span></div>
           <div class="row"><span>الوحدة</span><span>شقة ${info.unitNumber}</span></div>
-          <div class="row"><span>الطابق</span><span>شقة ${info.floor}</span></div>
           <div class="row"><span>تاريخ الدفع</span><span>${payment.paymentDate?.substring(0, 10) || '—'}</span></div>
+          <div class="row"><span>تاريخ بداية العقد</span><span>${payment.contract.startDate?.substring(0, 10) || '—'}</span></div>
+          <div class="row"><span>تاريخ انتهاء العقد</span><span>${payment.contract.endDate?.substring(0, 10) || '—'}</span></div>
+          <div class="row"><span>المدة المتبقية</span><span>${remainingTime} شهر</span></div>
           <div class="row"><span>طريقة الدفع</span><span>${payment.paymentMethod || 'نقدي'}</span></div>
 
           <div class="amount-box">
@@ -334,16 +344,16 @@ function Payments() {
                           {statusLabel(p.status)}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-500 mb-1">🏠 {info.propertyName} - شقة {info.unitNumber}</p>
-                      <p className="text-sm text-slate-500 mb-1">💰 {Number(p.amount).toLocaleString('ar-EG')} ج.م</p>
-                      <p className="text-sm text-slate-500 mb-1">📅 {p.paymentDate?.substring(0, 10)}</p>
-                      <p className="text-sm text-slate-500 mb-3">💳 {p.paymentMethod || 'نقدي'}</p>
+                      <p className="text-sm text-slate-500 mb-1"><FaHome color="blue" className="inline-block ml-1" /> {info.propertyName} - شقة {info.unitNumber}</p>
+                      <p className="text-sm text-slate-500 mb-1"><FaMoneyBill color="green" className="inline-block ml-1" /> {p.contract.monthlyRent} ج.م</p>
+                      <p className="text-sm text-slate-500 mb-1"><FaCalendar color="purple" className="inline-block ml-1" /> {p.paymentDate?.substring(0, 10)}</p>
+                      <p className="text-sm text-slate-500 mb-3"><FaCreditCard color="orange" className="inline-block ml-1" /> {p.paymentMethod || 'نقدي'}</p>
                       <div className="flex gap-2">
                         <button
                           onClick={() => printReceipt(p)}
                           className="flex-1 text-sm font-medium text-slate-600 bg-slate-100 py-2 rounded-lg flex items-center justify-center gap-1"
                         >
-                          🖨️ طباعة
+                          <FaPrint/> طباعة
                         </button>
                         <button
                           onClick={() => openEditModal(p)}
@@ -466,7 +476,7 @@ function Payments() {
                   <option value="">اختر العقد</option>
                   {contracts.map((c) => (
                     <option key={c._id || c.id} value={c._id || c.id}>
-                      عقد #{(c._id || c.id).toString().slice(-5)}
+                      عقد {(c.tenant.name)} عقار {(c.unit.property.name)} - شقة {(c.unit.unitNumber)}
                     </option>
                   ))}
                 </select>
