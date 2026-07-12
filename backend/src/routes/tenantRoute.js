@@ -6,11 +6,12 @@ import {
     updateTenant,
     deleteTenant
 } from '../services/tenantServices.js';
+import protect from '../middleware/authMiddleware.js';
 
 
 const router = express.Router();
 
-
+router.use(protect);
 
 router.post("/create_tenant",createTenant);
 router.get("/getAll_tenants",getAllTenants);

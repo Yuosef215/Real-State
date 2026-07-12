@@ -1,11 +1,13 @@
 import express from "express";
 import { createPayment, getAllPayments ,getPaymentById,updatePayment,deletePayment} from "../services/paymentServices.js";
-
+import protect from "../middleware/authMiddleware.js";
 
 
 
 
 const router = express.Router();
+
+router.use(protect);
 
 
 router.post("/create_payment", createPayment);

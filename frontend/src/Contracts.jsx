@@ -7,6 +7,9 @@ import { PiBuildingApartmentFill } from "react-icons/pi";
 import { IoIosPeople } from "react-icons/io";
 import { LiaFileContractSolid } from "react-icons/lia";
 import { MdPayments } from "react-icons/md";
+import { FaBuilding, FaLockOpen, FaLock, FaUsers, FaFileContract, FaMoneyBillWave } from "react-icons/fa";
+import { FaUser } from "react-icons/fa6";
+import { FaCalendar } from "react-icons/fa";
 
 // ====== إعدادات الـ API ======
 const API_BASE_URL = "http://localhost:5000/api/v1";
@@ -38,6 +41,15 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// إرجاع معرف العقار الخاص بالعقد، بغض النظر عن شكل الـ populate
+function getContractPropertyId(contract) {
+  const property = contract.unit?.property;
+  if (typeof property === 'object' && property !== null) {
+    return property._id || property.id;
+  }
+  return property || '';
+}
+
 const EMPTY_FORM = {
   propertyId: '',
   unit: '',
@@ -55,7 +67,7 @@ function Sidebar({ currentPath }) {
     <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-l border-slate-200 min-h-screen sticky top-0">
       <div className="p-6 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl">🏢</div>
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl"><img src="/logo.png" alt="" /></div>
           <h1 className="text-sm font-bold text-slate-800">مؤسسه الشروق 3</h1>
         </div>
       </div>
@@ -486,12 +498,12 @@ function ContractsCards({ contracts, onEdit, onDelete }) {
             <h3 className="font-bold text-slate-800">{c.unit?.property?.name || '—'}</h3>
             <span className={`text-xs px-2 py-1 rounded-full ${statusColor(c.status)}`}>{c.status}</span>
           </div>
-          <p className="text-sm text-slate-500 mb-1">🏠 شقة {c.unit?.unitNumber} - الدور {c.unit?.floor}</p>
-          <p className="text-sm text-slate-500 mb-1">👤 {c.tenant?.name || '—'}</p>
-          <p className="text-sm text-slate-500 mb-1">💰 إيجار: {Number(c.monthlyRent).toLocaleString('ar-EG')} ج.م</p>
-          <p className="text-sm text-slate-500 mb-1">🔒 تأمين: {Number(c.securityDeposit).toLocaleString('ar-EG')} ج.م</p>
+          <p className="text-sm text-slate-500 mb-1"><FaHome color='blue' className='inline' /> شقة {c.unit?.unitNumber} - الدور {c.unit?.floor}</p>
+          <p className="text-sm text-slate-500 mb-1"><FaUser color='green' className='inline' /> {c.tenant?.name || '—'}</p>
+          <p className="text-sm text-slate-500 mb-1"><FaMoneyBillWave color='orange' className='inline' /> إيجار: {Number(c.monthlyRent).toLocaleString('ar-EG')} ج.م</p>
+          <p className="text-sm text-slate-500 mb-1"><FaLock color='red' className='inline' /> تأمين: {Number(c.securityDeposit).toLocaleString('ar-EG')} ج.م</p>
           <p className="text-sm text-slate-500 mb-3">
-            📅 {c.startDate?.substring(0, 10)} → {c.endDate?.substring(0, 10)}
+            <FaCalendar color='black' className='inline' /> {c.startDate?.substring(0, 10)} → {c.endDate?.substring(0, 10)}
           </p>
           <div className="flex gap-2">
             <button
@@ -525,6 +537,9 @@ function Contracts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // ====== فلتر العقار ======
+  const [filterPropertyId, setFilterPropertyId] = useState('');
+
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -554,9 +569,6 @@ function Contracts() {
       setProperties(Array.isArray(propertiesList) ? propertiesList : []);
       setUnits(Array.isArray(unitsList) ? unitsList : []);
       setTenants(Array.isArray(tenantsList) ? tenantsList : []);
-
-      // 🔍 مؤقت للتشخيص - شيله بعد ما نحل المشكلة
-      console.log('Properties response:', propertiesList);
     } catch (err) {
       setError('تعذر تحميل البيانات، تأكد إن السيرفر شغال');
     } finally {
@@ -567,6 +579,11 @@ function Contracts() {
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  // ====== العقود بعد تطبيق فلتر العقار ======
+  const filteredContracts = filterPropertyId
+    ? contracts.filter((c) => getContractPropertyId(c) === filterPropertyId)
+    : contracts;
 
   const openAddModal = () => {
     setEditingContract(null);
@@ -612,15 +629,32 @@ function Contracts() {
       <Sidebar currentPath={location.pathname} />
 
       <main className="flex-1 min-w-0">
-        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-          <h2 className="text-lg font-bold text-slate-800">العقود</h2>
-          <button
-            onClick={openAddModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <span className="text-lg leading-none">+</span>
-            <span className="hidden sm:inline">إضافة عقد</span>
-          </button>
+        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 sticky top-0 z-10">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-slate-800">العقود</h2>
+            <button
+              onClick={openAddModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <span className="text-lg leading-none">+</span>
+              <span className="hidden sm:inline">إضافة عقد</span>
+            </button>
+          </div>
+
+          {/* ===== فلتر العقار ===== */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-500 whitespace-nowrap">فلترة حسب العقار:</label>
+            <select
+              value={filterPropertyId}
+              onChange={(e) => setFilterPropertyId(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+            >
+              <option value="">كل العقارات</option>
+              {properties.map((p) => (
+                <option key={p._id} value={p._id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
         </header>
 
         <div className="p-4 md:p-8 pb-24 md:pb-8">
@@ -636,16 +670,16 @@ function Contracts() {
             </div>
           )}
 
-          {!loading && !error && contracts.length === 0 && (
+          {!loading && !error && filteredContracts.length === 0 && (
             <div className="bg-white rounded-2xl p-10 text-center text-slate-400 border border-slate-100">
-              لا توجد عقود مضافة بعد
+              {contracts.length === 0 ? 'لا توجد عقود مضافة بعد' : 'لا توجد عقود لهذا العقار'}
             </div>
           )}
 
-          {!loading && !error && contracts.length > 0 && (
+          {!loading && !error && filteredContracts.length > 0 && (
             <>
-              <ContractsCards contracts={contracts} onEdit={openEditModal} onDelete={setDeleteTarget} />
-              <ContractsTable contracts={contracts} onEdit={openEditModal} onDelete={setDeleteTarget} />
+              <ContractsCards contracts={filteredContracts} onEdit={openEditModal} onDelete={setDeleteTarget} />
+              <ContractsTable contracts={filteredContracts} onEdit={openEditModal} onDelete={setDeleteTarget} />
             </>
           )}
         </div>

@@ -6,10 +6,13 @@ import {
     updateProperty,
     deleteProperty
 } from '../services/propertyServices.js';
+import protect from '../middleware/authMiddleware.js';
 
 
 
 const router = express.Router();
+
+router.use(protect);
 
 
 router.post("/create_property",createProperty);

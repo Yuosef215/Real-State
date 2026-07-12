@@ -7,10 +7,14 @@ import PaymentModel from "../models/payment.js";
 
 export const getDashboard = asyncHandler(async (req, res) => {
     const currentDate = new Date();
+
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
 
+    // =========================
     // Counts
+    // =========================
+
     const totalProperties = await PropertyModel.countDocuments();
 
     const totalUnits = await UnitModel.countDocuments();
@@ -29,23 +33,53 @@ export const getDashboard = asyncHandler(async (req, res) => {
         status: "نشط",
     });
 
-    // دخل الشهر الحالي
-    const payments = await PaymentModel.find({
+    // =========================
+    // Monthly Revenue
+    // =========================
+
+    const monthlyPayments = await PaymentModel.find({
         month: currentMonth,
         year: currentYear,
         paymentType: "إيجار",
     });
 
-    // الدخل اليومي
-    const dailyRevenue = payments.reduce(
+    const monthlyRevenue = monthlyPayments.reduce(
         (sum, payment) => sum + payment.amountPaid,
         0
     );
 
-    const monthlyRevenue = payments.reduce(
+    // =========================
+    // Daily Revenue
+    // =========================
+
+    const startOfDay = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate()
+    );
+
+    const endOfDay = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate() + 1
+    );
+
+    const dailyPayments = await PaymentModel.find({
+        paymentType: "إيجار",
+        paymentDate: {
+            $gte: startOfDay,
+            $lt: endOfDay,
+        },
+    });
+
+    const dailyRevenue = dailyPayments.reduce(
         (sum, payment) => sum + payment.amountPaid,
         0
     );
+
+    // =========================
+    // Response
+    // =========================
 
     res.status(200).json({
         success: true,

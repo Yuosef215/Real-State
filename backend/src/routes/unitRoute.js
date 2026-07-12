@@ -7,9 +7,12 @@ import {
     deleteUnit,
     getUnitsByProperty
 } from '../services/unitServices.js';
+import protect from '../middleware/authMiddleware.js';
 
 
 const router = express.Router();
+
+router.use(protect);
 
 router.post('/create_units/:propertyId', createUnit);
 router.get('/getAll_units', getAllUnits);

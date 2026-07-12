@@ -223,12 +223,9 @@ function Payments() {
 
     setSaving(true);
     const payload = {
-      contractId: form.contractId,
-      amount: Number(form.amount),
-      paymentDate: form.paymentDate,
-      paymentMethod: 'نقدي',
-      status: form.status,
-    };
+    contract: form.contractId,
+    amountPaid: Number(form.amount),
+};
 
     try {
       if (editingId) {
@@ -274,8 +271,8 @@ function Payments() {
       <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-l border-slate-200 min-h-screen sticky top-0">
         <div className="p-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl">🏢</div>
-            <h1 className="text-sm font-bold text-slate-800">إدارة العقارات</h1>
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl"><img src="/logo.png" alt="" /></div>
+            <h1 className="text-sm font-bold text-slate-800">مؤسسه الشروق 3</h1>
           </div>
         </div>
         <nav className="flex-1 p-3">
@@ -474,6 +471,7 @@ function Payments() {
                   }`}
                 >
                   <option value="">اختر العقد</option>
+                  
                   {contracts.map((c) => (
                     <option key={c._id || c.id} value={c._id || c.id}>
                       عقد {(c.tenant.name)} عقار {(c.unit.property.name)} - شقة {(c.unit.unitNumber)}

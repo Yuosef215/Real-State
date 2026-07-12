@@ -59,6 +59,9 @@ function Units() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // ====== فلتر العقار ======
+  const [filterPropertyId, setFilterPropertyId] = useState('');
+
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -68,7 +71,19 @@ function Units() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const propertyName = (id) => {
+  // إرجاع معرف العقار الخاص بالوحدة، سواء جاي كـ id مباشر أو كـ object فيه populate
+  const getUnitPropertyId = (unit) => {
+    if (typeof unit.property === 'object' && unit.property !== null) {
+      return unit.property._id || unit.property.id;
+    }
+    return unit.propertyId || unit.property || '';
+  };
+
+  const propertyName = (unit) => {
+    if (typeof unit.property === 'object' && unit.property !== null) {
+      return unit.property.name || '—';
+    }
+    const id = unit.propertyId || unit.property;
     const p = properties.find((p) => (p._id || p.id) === id);
     return p?.name || '—';
   };
@@ -98,6 +113,11 @@ function Units() {
     fetchAll();
   }, []);
 
+  // ====== الوحدات بعد تطبيق فلتر العقار ======
+  const filteredUnits = filterPropertyId
+    ? units.filter((u) => getUnitPropertyId(u) === filterPropertyId)
+    : units;
+
   const openAddModal = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
@@ -113,7 +133,7 @@ function Units() {
       area: unit.area ?? '',
       monthlyRent: unit.monthlyRent ?? '',
       status: unit.status || 'متاحه',
-      propertyId: unit.propertyId || unit.property || '',
+      propertyId: getUnitPropertyId(unit),
     });
     setFormErrors({});
     setShowModal(true);
@@ -191,7 +211,7 @@ function Units() {
       <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-l border-slate-200 min-h-screen sticky top-0">
         <div className="p-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl">🏢</div>
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl"><img src="/logo.png" alt="" /></div>
             <h1 className="text-sm font-bold text-slate-800">مؤسسه الشروق 3</h1>
           </div>
         </div>
@@ -216,15 +236,32 @@ function Units() {
 
       {/* ===== Main Content ===== */}
       <main className="flex-1 min-w-0">
-        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-          <h2 className="text-lg font-bold text-slate-800">الوحدات</h2>
-          <button
-            onClick={openAddModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <span className="text-lg leading-none">+</span>
-            <span className="hidden sm:inline">إضافة وحدة</span>
-          </button>
+        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 sticky top-0 z-10">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-slate-800">الوحدات</h2>
+            <button
+              onClick={openAddModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <span className="text-lg leading-none">+</span>
+              <span className="hidden sm:inline">إضافة وحدة</span>
+            </button>
+          </div>
+
+          {/* ===== فلتر العقار ===== */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-500 whitespace-nowrap">فلترة حسب العقار:</label>
+            <select
+              value={filterPropertyId}
+              onChange={(e) => setFilterPropertyId(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+            >
+              <option value="">كل العقارات</option>
+              {properties.map((p) => (
+                <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
         </header>
 
         <div className="p-4 md:p-8 pb-24 md:pb-8">
@@ -241,17 +278,17 @@ function Units() {
             </div>
           )}
 
-          {!loading && !error && units.length === 0 && (
+          {!loading && !error && filteredUnits.length === 0 && (
             <div className="bg-white rounded-2xl p-10 text-center text-slate-400 border border-slate-100">
-              لا توجد وحدات مضافة بعد
+              {units.length === 0 ? 'لا توجد وحدات مضافة بعد' : 'لا توجد وحدات لهذا العقار'}
             </div>
           )}
 
-          {!loading && !error && units.length > 0 && (
+          {!loading && !error && filteredUnits.length > 0 && (
             <>
               {/* ===== عرض كروت في الموبايل ===== */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-3">
-                {units.map((u) => (
+                {filteredUnits.map((u) => (
                   <div key={u._id || u.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="font-bold text-slate-800">وحدة {u.unitNumber}</h3>
@@ -259,9 +296,8 @@ function Units() {
                         {statusLabel(u.status)}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-500 mb-1">🏢 {propertyName(u.propertyId || u.property)}</p>
-                    <p className="text-sm text-slate-500 mb-1">الطابق: {u.floor} — المساحة: {u.area} م²</p>
-                    <p className="text-sm text-slate-500 mb-3">الإيجار الشهري: {Number(u.monthlyRent).toLocaleString('ar-EG')} ج.م</p>
+                    <p className="text-sm text-slate-500 mb-1">🏢 {propertyName(u)}</p>
+                    <p className="text-sm text-slate-500 mb-3">الإيجار الشهري: {u.contracts?.[0]?.monthlyRent?.toLocaleString('ar-EG')} ج.م</p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => openEditModal(u)}
@@ -294,10 +330,10 @@ function Units() {
                     </tr>
                   </thead>
                   <tbody>
-                    {units.map((u) => (
+                    {filteredUnits.map((u) => (
                       <tr key={u._id || u.id} className="border-t border-slate-100 hover:bg-slate-50">
                         <td className="py-3 px-5 font-medium text-slate-800">{u.unitNumber}</td>
-                        <td className="py-3 px-5 text-slate-600">{u.propertyId || u.property.name}</td>
+                        <td className="py-3 px-5 text-slate-600">{propertyName(u)}</td>
                         <td className="py-3 px-5 text-slate-600">{u.floor}</td>
                         <td className="py-3 px-5 text-slate-600">{u.contracts?.[0]?.monthlyRent?.toLocaleString('ar-EG')} ج.م</td>
                         <td className="py-3 px-5">

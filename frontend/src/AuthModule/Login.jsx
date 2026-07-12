@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // ====== إعدادات الـ API ======
 const API_BASE_URL = "http://localhost:5000/api/v1";
@@ -12,6 +13,7 @@ function Login() {
   const [passwordError, setPasswordError] = useState('');
   const [alert, setAlert] = useState({ message: '', type: '' });
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const validate = () => {
     let valid = true;
@@ -81,7 +83,7 @@ function Login() {
 
         <div className="text-center mb-8">
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-            🏢
+            <img src="/logo.png" alt="" />
           </div>
           <h1 className="text-xl text-slate-800 font-bold">مكتب الشروق للعقارات</h1>
         </div>

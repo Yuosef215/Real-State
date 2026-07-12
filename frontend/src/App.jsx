@@ -6,6 +6,7 @@ import Units from "./Units";
 import Tenants from "./Tenants";
 import Contracts from "./Contracts";
 import Payments from "./Payments";
+import AddUser from './AddUser';
 
 
 
@@ -20,24 +21,28 @@ function App() {
       element: <Dashboard/>,
     },
     {
-      path: "properties",
+      path: "/properties",
       element: <Properties/>,
     },
     {
-      path: "units",
+      path: "/units",
       element: <Units/>,
     },
     {
-      path: "tenants",
+      path: "/tenants",
       element: <Tenants/>,
     },
     {
-      path: "contracts",
+      path: "/contracts",
       element: <Contracts/>,
     },
     {
-      path: "payments",
+      path: "/payments",
       element: <Payments/>
+    },
+    {
+      path: "/users/add",
+      element: <AddUser/>
     }
   ]);
 

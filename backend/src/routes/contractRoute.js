@@ -6,13 +6,14 @@ import {
     updateContract,
     deleteContract
 } from '../services/contractServices.js';
+import protect from '../middleware/authMiddleware.js';
 
 
 
 
 const router = express.Router();
 
-
+router.use(protect);
 
 
 router.post("/create_contract",createContract);
