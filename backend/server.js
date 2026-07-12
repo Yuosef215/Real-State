@@ -23,7 +23,7 @@ dbConnction();
 app.use(cors({
     origin: [
       "http://localhost:5173",
-      "https://real-estate-system.vercel.app"
+      "https://real-state-2zumscyae-youssef-alaa-s-projects.vercel.app/",
     ],
     credentials: true,
 }));
