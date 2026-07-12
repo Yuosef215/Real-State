@@ -21,7 +21,11 @@ import cors from 'cors';
 const app = express();
 dbConnction();
 app.use(cors({
-    origin: "*"
+    origin: [
+      "http://localhost:5173",
+      "https://real-estate-system.vercel.app"
+    ],
+    credentials: true,
 }));
 
 
