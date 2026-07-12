@@ -15,7 +15,7 @@ import { FaUserPlus } from "react-icons/fa";
 const size = 20; // حجم الأيقونات في المينيو
 
 // ====== إعدادات الـ API ======
-const API_BASE_URL = "http://localhost:5000/api/v1";
+const API_BASE_URL = "https://real-state-5h8r.onrender.com/api/v1";
 const DASHBOARD_ENDPOINT = `${API_BASE_URL}/dashboard/get_dashboard`;
 const EXPIRING_CONTRACTS_ENDPOINT = `${API_BASE_URL}/expiring/expiring-contracts`;
 

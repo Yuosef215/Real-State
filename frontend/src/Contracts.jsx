@@ -12,7 +12,7 @@ import { FaUser } from "react-icons/fa6";
 import { FaCalendar } from "react-icons/fa";
 
 // ====== إعدادات الـ API ======
-const API_BASE_URL = "http://localhost:5000/api/v1";
+const API_BASE_URL = "https://real-state-5h8r.onrender.com/api/v1";
 const CONTRACTS_BASE = `${API_BASE_URL}/contracts`;
 const PROPERTIES_BASE = `${API_BASE_URL}/properties`;
 const TENANTS_BASE = `${API_BASE_URL}/tenants`;
