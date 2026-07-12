@@ -21,12 +21,7 @@ import cors from 'cors';
 const app = express();
 dbConnction();
 app.use(cors({
-    origin: [
-      "http://localhost:5173",
-      "https://real-state-2zumscyae-youssef-alaa-s-projects.vercel.app",
-      "https://real-state-git-master-youssef-alaa-s-projects.vercel.app",
-    ],
-    credentials: true,
+    origin: "*"
 }));
 
 
