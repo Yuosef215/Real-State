@@ -133,7 +133,7 @@ export const updateContract = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const {
         tenant,
-        unit,
+        unit, 
         monthlyRent,
         startDate,
         securityDeposit,
