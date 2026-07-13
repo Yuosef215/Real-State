@@ -80,7 +80,7 @@ export const createContract = asyncHandler(async (req, res, next) => {
 
 
 export const getAllContracts = asyncHandler(async (req, res) => {
-    const contracts = await ContractModel.find()
+    const contracts = await ContractModel.find().sort({ createdAt: -1 })
         .populate({
             path: "tenant",
             select: "name phone nationalId"
