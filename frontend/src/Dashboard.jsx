@@ -10,7 +10,8 @@ import { MdOutlineLock, MdOutlineLockOpen } from 'react-icons/md';
 import { FaMoneyBillWave } from 'react-icons/fa';
 import { MdOutlineAttachMoney } from 'react-icons/md';
 import { RiTimerFill } from "react-icons/ri";
-import { FaUserPlus } from "react-icons/fa";
+import { FaUserPlus } from "react-icons/fa"
+import { useNavigate } from 'react-router-dom';
 
 const size = 20; // حجم الأيقونات في المينيو
 
@@ -111,6 +112,14 @@ function Dashboard() {
       ]
     : [];
 
+
+    const navigate2 = useNavigate();
+
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  navigate2("/");
+};
+
   return (
     <div dir="rtl" className="min-h-screen bg-slate-100 flex font-sans">
 
@@ -154,9 +163,23 @@ function Dashboard() {
         {/* Top bar */}
         <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
           <h2 className="text-lg font-bold text-slate-800">لوحة التحكم</h2>
-          <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-600">
-            <img src="/logo.png" alt="" />
-          </div>
+          
+          <div className="flex items-center gap-3">
+  <button
+    onClick={handleLogout}
+    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition"
+  >
+    تسجيل الخروج
+  </button>
+
+  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
+    <img
+      src="/logo.png"
+      alt="Logo"
+      className="w-8 h-8 object-contain"
+    />
+  </div>
+</div>
         </header>
 
         <div className="p-4 md:p-8 pb-24 md:pb-8">
