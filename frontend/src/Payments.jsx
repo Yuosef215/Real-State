@@ -139,7 +139,7 @@ function Payments() {
 
           <div class="amount-box">
             <p>المبلغ المدفوع</p>
-            <h2>${payment.contract.monthlyRent} ج.م</h2>
+            <h2>${payment.contract.monthlyRent || 0} ج.م</h2>
           </div>
 
           <div class="footer">
