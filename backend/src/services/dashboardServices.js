@@ -6,130 +6,130 @@ import ContractModel from "../models/contract.js";
 import PaymentModel from "../models/payment.js";
 
 export const getDashboard = asyncHandler(async (req, res) => {
-    const currentDate = new Date();
+  const currentDate = new Date();
 
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
 
-    // =========================
-    // Counts
-    // =========================
+  // =========================
+  // Counts
+  // =========================
 
-    const totalProperties = await PropertyModel.countDocuments();
+  const totalProperties = await PropertyModel.countDocuments();
 
-    const totalUnits = await UnitModel.countDocuments();
+  const totalUnits = await UnitModel.countDocuments();
 
-    const availableUnits = await UnitModel.countDocuments({
-        status: "متاحه",
-    });
+  const availableUnits = await UnitModel.countDocuments({
+    status: "متاحه",
+  });
 
-    const rentedUnits = await UnitModel.countDocuments({
-        status: "مستأجره",
-    });
+  const rentedUnits = await UnitModel.countDocuments({
+    status: "مستأجره",
+  });
 
-    const totalTenants = await TenantModel.countDocuments();
+  const totalTenants = await TenantModel.countDocuments();
 
-    const activeContracts = await ContractModel.countDocuments({
-        status: "نشط",
-    });
+  const activeContracts = await ContractModel.countDocuments({
+    status: "نشط",
+  });
 
-    // =========================
-    // Monthly Revenue
-    // =========================
+  // =========================
+  // Monthly Revenue
+  // =========================
 
-    const monthlyPayments = await PaymentModel.find({
-        month: currentMonth,
-        year: currentYear,
-        paymentType: "إيجار",
-    });
+  const monthlyPayments = await PaymentModel.find({
+    month: currentMonth,
+    year: currentYear,
+    paymentType: "إيجار",
+  });
 
-    const monthlyRevenue = monthlyPayments.reduce(
-        (sum, payment) => sum + payment.amountPaid,
-        0
-    );
+  const monthlyRevenue = monthlyPayments.reduce(
+    (sum, payment) => sum + payment.amountPaid,
+    0,
+  );
 
-    // =========================
-    // Daily Revenue
-    // =========================
+  // =========================
+  // Daily Revenue
+  // =========================
 
-    const startOfDay = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate()
-    );
+  const now = new Date();
 
-    const endOfDay = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate() + 1
-    );
+  // تحويل لتوقيت مصر (UTC+3)
+  const egyptNow = new Date(now.getTime() + 3 * 60 * 60 * 1000);
 
-    const dailyPayments = await PaymentModel.find({
-        paymentType: "إيجار",
-        paymentDate: {
-            $gte: startOfDay,
-            $lt: endOfDay,
-        },
-    });
+  const startOfDay = new Date(egyptNow);
+  startOfDay.setUTCHours(0, 0, 0, 0);
 
-    const dailyRevenue = dailyPayments.reduce(
-        (sum, payment) => sum + payment.amountPaid,
-        0
-    );
+  const endOfDay = new Date(egyptNow);
+  endOfDay.setUTCHours(23, 59, 59, 999);
 
-    // =========================
-    // Response
-    // =========================
+  // رجوع إلى UTC للاستعلام
+  startOfDay.setTime(startOfDay.getTime() - 3 * 60 * 60 * 1000);
+  endOfDay.setTime(endOfDay.getTime() - 3 * 60 * 60 * 1000);
 
-    res.status(200).json({
-        success: true,
-        data: {
-            totalProperties,
-            totalUnits,
-            availableUnits,
-            rentedUnits,
-            totalTenants,
-            activeContracts,
-            monthlyRevenue,
-            dailyRevenue,
-        },
-    });
+  const dailyPayments = await PaymentModel.find({
+    paymentType: "إيجار",
+    paymentDate: {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    },
+  });
+
+  const dailyRevenue = dailyPayments.reduce(
+    (sum, payment) => sum + payment.amountPaid,
+    0,
+  );
+
+  // =========================
+  // Response
+  // =========================
+
+  res.status(200).json({
+    success: true,
+    data: {
+      totalProperties,
+      totalUnits,
+      availableUnits,
+      rentedUnits,
+      totalTenants,
+      activeContracts,
+      monthlyRevenue,
+      dailyRevenue,
+    },
+  });
 });
 
 export const getUnpaidContracts = asyncHandler(async (req, res) => {
+  const currentDate = new Date();
+  const month = currentDate.getMonth() + 1;
+  const year = currentDate.getFullYear();
 
-    const currentDate = new Date();
-    const month = currentDate.getMonth() + 1;
-    const year = currentDate.getFullYear();
-
-    const activeContracts = await ContractModel.find({
-        status: "نشط",
-    })
-        .populate("tenant")
-        .populate({
-            path: "unit",
-            populate: {
-                path: "property",
-            },
-        });
-
-    const payments = await PaymentModel.find({
-        month,
-        year,
-        paymentType: "إيجار",
+  const activeContracts = await ContractModel.find({
+    status: "نشط",
+  })
+    .populate("tenant")
+    .populate({
+      path: "unit",
+      populate: {
+        path: "property",
+      },
     });
 
-    const paidContracts = payments.map(payment =>
-        payment.contract.toString()
-    );
+  const payments = await PaymentModel.find({
+    month,
+    year,
+    paymentType: "إيجار",
+  });
 
-    const unpaidContracts = activeContracts.filter(
-        contract => !paidContracts.includes(contract._id.toString())
-    );
+  const paidContracts = payments.map((payment) => payment.contract.toString());
 
-    res.status(200).json({
-        success: true,
-        results: unpaidContracts.length,
-        data: unpaidContracts,
-    });
+  const unpaidContracts = activeContracts.filter(
+    (contract) => !paidContracts.includes(contract._id.toString()),
+  );
+
+  res.status(200).json({
+    success: true,
+    results: unpaidContracts.length,
+    data: unpaidContracts,
+  });
 });
