@@ -18,6 +18,7 @@ const size = 20; // حجم الأيقونات في المينيو
 // ====== إعدادات الـ API ======
 const API_BASE_URL = "https://real-state-5h8r.onrender.com/api/v1";
 const DASHBOARD_ENDPOINT = `${API_BASE_URL}/dashboard/get_dashboard`;
+const DASHBOARD_GETUNPAID = `${API_BASE_URL}/dashboard/get_unpaid`;
 const EXPIRING_CONTRACTS_ENDPOINT = `${API_BASE_URL}/expiring/expiring-contracts`;
 
 // ====== روابط المينيو ======
@@ -65,6 +66,10 @@ function Dashboard() {
       }
     };
 
+    const fetchUnpaid = async()=>{
+
+    }
+
     const fetchExpiringContracts = async () => {
       setExpiringLoading(true);
       setExpiringError('');
@@ -109,6 +114,7 @@ function Dashboard() {
         { label: 'العقود النشطة', value: stats.activeContracts, icon: <LiaFileContractSolid size={size} color='black'/>, color: 'bg-teal-50 text-teal-600' },
         { label: 'الإيراد الشهري', value: `${stats.monthlyRevenue?.toLocaleString('ar-EG')} ج.م`, icon: <MdOutlineAttachMoney size={size} color='black'/>, color: 'bg-rose-50 text-rose-600', wide: true },
         { label: 'الإيراد اليومي', value: `${stats.dailyRevenue?.toLocaleString('ar-EG')} ج.م`, icon: <MdOutlineAttachMoney size={size} color='black'/>, color: 'bg-rose-50 text-rose-600', wide: true },
+        { label: 'العقود المتاخره في الدفع', value: `عدد `, icon: <LiaFileContractSolid size={size} color='red'/>, color: 'bg-rose-50 text-rose-600', wide: true },
       ]
     : [];
 

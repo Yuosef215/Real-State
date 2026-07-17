@@ -95,3 +95,41 @@ export const getDashboard = asyncHandler(async (req, res) => {
         },
     });
 });
+
+export const getUnpaidContracts = asyncHandler(async (req, res) => {
+
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+
+    const activeContracts = await ContractModel.find({
+        status: "نشط",
+    })
+        .populate("tenant")
+        .populate({
+            path: "unit",
+            populate: {
+                path: "property",
+            },
+        });
+
+    const payments = await PaymentModel.find({
+        month,
+        year,
+        paymentType: "إيجار",
+    });
+
+    const paidContracts = payments.map(payment =>
+        payment.contract.toString()
+    );
+
+    const unpaidContracts = activeContracts.filter(
+        contract => !paidContracts.includes(contract._id.toString())
+    );
+
+    res.status(200).json({
+        success: true,
+        results: unpaidContracts.length,
+        data: unpaidContracts,
+    });
+});
