@@ -15,9 +15,9 @@ router.use(protect);
 
 router.post("/create-expense",createExpense);
 router.get("/get-all-expense",getAllExpenses);
-router.get("/get-one-expense",getExpenseById);
-router.put("/update-expense",updateExpense);
-router.delete("/delete-expense",deleteExpense);
+router.get("/get-one-expense/:id",getExpenseById);
+router.put("/update-expense/:id",updateExpense);
+router.delete("/delete-expense/:id",deleteExpense);
 
 
 export default router;
