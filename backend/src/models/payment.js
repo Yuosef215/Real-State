@@ -48,13 +48,4 @@ const PaymentSchema = new mongoose.Schema(
   }
 );
 
-PaymentSchema.index(
-  {
-    contract: 1,
-    month: 1,
-    year: 1,
-    paymentType: 1,
-  }
-);
-
 export default mongoose.model("Payment", PaymentSchema);
