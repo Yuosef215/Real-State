@@ -54,9 +54,6 @@ PaymentSchema.index(
     month: 1,
     year: 1,
     paymentType: 1,
-  },
-  {
-    unique: true,
   }
 );
 
