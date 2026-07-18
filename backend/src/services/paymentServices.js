@@ -43,12 +43,6 @@ export const createPayment = asyncHandler(async (req, res, next) => {
         return next(new ApiError("المبلغ المدفوع يجب أن يكون أكبر من صفر", 400));
     }
 
-    if (amountPaid > contractExists.monthlyRent) {
-        return next(
-            new ApiError("المبلغ المدفوع أكبر من قيمة الإيجار الشهري", 400)
-        );
-    }
-
     const newPayment = await PaymentModel.create({
         contract,
         amountPaid,
@@ -124,6 +118,12 @@ export const getPaymentById = asyncHandler(async (req, res, next) => {
 });
 
 export const updatePayment = asyncHandler(async (req, res, next) => {
+    const { amountPaid } = req.body;
+
+    if (amountPaid !== undefined && amountPaid <= 0) {
+        return next(new ApiError("المبلغ المدفوع يجب أن يكون أكبر من صفر", 400));
+    }
+
     const payment = await PaymentModel.findByIdAndUpdate(
         req.params.id,
         req.body,
@@ -131,7 +131,23 @@ export const updatePayment = asyncHandler(async (req, res, next) => {
             new: true,
             runValidators: true,
         }
-    );
+    ).populate({
+        path: "contract",
+        populate: [
+            {
+                path: "tenant",
+                select: "name phone nationalId",
+            },
+            {
+                path: "unit",
+                select: "unitNumber floor",
+                populate: {
+                    path: "property",
+                    select: "name",
+                },
+            },
+        ],
+    });
 
     if (!payment) {
         return next(new ApiError("الدفعة غير موجودة", 404));
