@@ -113,8 +113,6 @@ function Tenants() {
 
     if (!form.nationalId.trim()) {
       errs.nationalId = 'الرقم القومي مطلوب';
-    } else if (!/^\d{14}$/.test(form.nationalId.trim())) {
-      errs.nationalId = 'الرقم القومي يجب أن يكون 14 رقم';
     }
 
     setFormErrors(errs);
@@ -408,7 +406,7 @@ function Tenants() {
                     className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
                       formErrors.nationalId ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
                     }`}
-                    placeholder="14 رقم"
+                    placeholder="الرقم القومي الخاص بي المستأجر"
                   />
                   {formErrors.nationalId && <p className="text-red-500 text-xs mt-1">{formErrors.nationalId}</p>}
                 </div>
