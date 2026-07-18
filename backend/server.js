@@ -11,6 +11,7 @@ import contractRoute from './src/routes/contractRoute.js';
 import paymentRoute from './src/routes/paymentRoute.js';
 import dashboardRoute from './src/routes/dashboardRoute.js';
 import expiringRoute from './src/routes/expiringRoute.js';
+import expenseRoute from './src/routes/expenseRoutes.js';
 
 import globalErrorHandler from "./src/middleware/errorMiddleware.js";
 import cors from 'cors';
@@ -38,6 +39,7 @@ app.use("/api/v1/contracts",contractRoute);
 app.use("/api/v1/payments",paymentRoute);
 app.use("/api/v1/dashboard",dashboardRoute);
 app.use("/api/v1/expiring",expiringRoute);
+app.use("/api/v1/expense",expenseRoute);
 
 app.use(globalErrorHandler);
 const PORT = process.env.PORT || 5000;
