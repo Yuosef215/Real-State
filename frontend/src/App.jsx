@@ -7,6 +7,7 @@ import Tenants from "./Tenants";
 import Contracts from "./Contracts";
 import Payments from "./Payments";
 import AddUser from './AddUser';
+import Expenses from './Expenses';
 
 
 
@@ -43,6 +44,10 @@ function App() {
     {
       path: "/users/add",
       element: <AddUser/>
+    },
+    {
+      path: "/expenses",
+      element: <Expenses/>
     }
   ]);
 

@@ -72,6 +72,10 @@ function Payments() {
   const [formErrors, setFormErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
+  // ====== البحث داخل قائمة اختيار العقد ======
+  const [contractSearch, setContractSearch] = useState('');
+  const [showContractOptions, setShowContractOptions] = useState(false);
+
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -84,6 +88,34 @@ function Payments() {
       propertyName: contract?.unit?.property?.name || '—',
       contractLabel: contract ? `عقد #${(contract._id || contract.id).toString().slice(-5)}` : '—',
     };
+  };
+
+  // النص الظاهر لكل عقد داخل قائمة الاختيار
+  const contractDisplayLabel = (c) => {
+    const tenantName = c.tenant?.name || '—';
+    const propertyName = c.unit?.property?.name || '—';
+    const unitNumber = c.unit?.unitNumber ?? '—';
+    return `عقد ${tenantName} - عقار ${propertyName} - شقة ${unitNumber}`;
+  };
+
+  // فلترة العقود حسب نص البحث (اسم المستأجر / العقار / رقم الوحدة)
+  const filteredContracts = contracts.filter((c) => {
+    const q = contractSearch.trim().toLowerCase();
+    if (!q) return true;
+    const tenantName = (c.tenant?.name || '').toLowerCase();
+    const propertyName = (c.unit?.property?.name || '').toLowerCase();
+    const unitNumber = (c.unit?.unitNumber ?? '').toString().toLowerCase();
+    return (
+      tenantName.includes(q) ||
+      propertyName.includes(q) ||
+      unitNumber.includes(q)
+    );
+  });
+
+  const handleSelectContract = (contract) => {
+    setForm({ ...form, contractId: contract._id || contract.id });
+    setContractSearch(contractDisplayLabel(contract));
+    setShowContractOptions(false);
   };
 
   const printReceipt = (payment) => {
@@ -187,17 +219,24 @@ function Payments() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormErrors({});
+    setContractSearch('');
+    setShowContractOptions(false);
     setShowModal(true);
   };
 
   const openEditModal = (payment) => {
     setEditingId(payment._id || payment.id);
+    const contractId = payment.contractId || payment.contract?._id || payment.contract || '';
     setForm({
-      contractId: payment.contractId || payment.contract || '',
-      amount: payment.amount ?? '',
+      contractId,
+      amount: payment.amountPaid ?? payment.amount ?? '',
       paymentDate: payment.paymentDate ? payment.paymentDate.substring(0, 10) : '',
       status: payment.status || 'pending',
     });
+    // تعبئة خانة البحث باسم العقد المختار عند التعديل
+    const contract = payment.contract || contracts.find((c) => (c._id || c.id) === contractId);
+    setContractSearch(contract ? contractDisplayLabel(contract) : '');
+    setShowContractOptions(false);
     setFormErrors({});
     setShowModal(true);
   };
@@ -206,11 +245,13 @@ function Payments() {
     setShowModal(false);
     setForm(EMPTY_FORM);
     setFormErrors({});
+    setContractSearch('');
+    setShowContractOptions(false);
   };
 
   const validateForm = () => {
     const errs = {};
-    if (!form.contractId) errs.contractId = 'اختر العقد';
+    if (!form.contractId) errs.contractId = 'اختر العقد من القائمة';
     if (!form.amount || Number(form.amount) <= 0) errs.amount = 'أدخل مبلغ صحيح';
     if (!form.paymentDate) errs.paymentDate = 'تاريخ الدفع مطلوب';
     setFormErrors(errs);
@@ -222,10 +263,12 @@ function Payments() {
     if (!validateForm()) return;
 
     setSaving(true);
+
     const payload = {
-    contract: form.contractId,
-    amountPaid: Number(form.amount),
-};
+      contract: form.contractId,
+      amountPaid: Number(form.amount),
+      paymentDate: form.paymentDate,
+    };
 
     try {
       if (editingId) {
@@ -461,23 +504,48 @@ function Payments() {
                 </div>
               )}
 
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">العقد</label>
-                <select
-                  value={form.contractId}
-                  onChange={(e) => setForm({ ...form, contractId: e.target.value })}
+                <input
+                  type="text"
+                  value={contractSearch}
+                  onChange={(e) => {
+                    setContractSearch(e.target.value);
+                    setShowContractOptions(true);
+                    if (form.contractId) {
+                      setForm({ ...form, contractId: '' });
+                    }
+                  }}
+                  onFocus={() => setShowContractOptions(true)}
+                  onBlur={() => {
+                    setTimeout(() => setShowContractOptions(false), 150);
+                  }}
+                  placeholder="اكتب اسم المستأجر أو العقار أو رقم الوحدة للبحث..."
                   className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
                     formErrors.contractId ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
                   }`}
-                >
-                  <option value="">اختر العقد</option>
-                  
-                  {contracts.map((c) => (
-                    <option key={c._id || c.id} value={c._id || c.id}>
-                      عقد {(c.tenant.name)} عقار {(c.unit.property.name)} - شقة {(c.unit.unitNumber)}
-                    </option>
-                  ))}
-                </select>
+                />
+
+                {showContractOptions && (
+                  <div className="absolute z-40 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                    {filteredContracts.length === 0 && (
+                      <div className="px-3.5 py-3 text-sm text-slate-400 text-center">
+                        لا توجد نتائج مطابقة
+                      </div>
+                    )}
+                    {filteredContracts.map((c) => (
+                      <button
+                        type="button"
+                        key={c._id || c.id}
+                        onMouseDown={() => handleSelectContract(c)}
+                        className="w-full text-right px-3.5 py-2.5 text-sm hover:bg-blue-50 border-b border-slate-50 last:border-b-0"
+                      >
+                        {contractDisplayLabel(c)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {formErrors.contractId && <p className="text-red-500 text-xs mt-1">{formErrors.contractId}</p>}
               </div>
 
