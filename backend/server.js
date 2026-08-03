@@ -13,6 +13,7 @@ import dashboardRoute from './src/routes/dashboardRoute.js';
 import expiringRoute from './src/routes/expiringRoute.js';
 import expenseRoute from './src/routes/expenseRoutes.js';
 import contractBalanceRoute from './src/routes/contractBalanceRoute.js';
+import revenuesRoutes from  './src/routes/revenuesRoutes.js' ;
 
 
 import globalErrorHandler from "./src/middleware/errorMiddleware.js";
@@ -43,6 +44,7 @@ app.use("/api/v1/dashboard",dashboardRoute);
 app.use("/api/v1/expiring",expiringRoute);
 app.use("/api/v1/expense",expenseRoute);
 app.use("/api/v1/reports",contractBalanceRoute);
+app.use("/api/v1/revenues",revenuesRoutes);
 
 app.use(globalErrorHandler);
 const PORT = process.env.PORT || 5000;
