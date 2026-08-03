@@ -8,6 +8,7 @@ import Contracts from "./Contracts";
 import Payments from "./Payments";
 import AddUser from './AddUser';
 import Expenses from './Expenses';
+import Revenues from "./revenues";
 
 
 
@@ -48,6 +49,10 @@ function App() {
     {
       path: "/expenses",
       element: <Expenses/>
+    },
+    {
+      path: "/revenues",
+      element: <Revenues/>
     }
   ]);
 

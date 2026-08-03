@@ -216,6 +216,14 @@ function Dashboard() {
           wide: true,
           path: "/expenses"
         },
+        {
+          label: "الايرادات اليومية",
+          value: 'دخول',
+          icon: <MdOutlineAttachMoney size={size} color="orange" />,
+          color: "bg-rose-50 text-rose-600",
+          wide: true,
+          path: "/revenues"
+        },
       ]
     : [];
 
