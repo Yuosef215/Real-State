@@ -211,7 +211,7 @@ function Payments() {
 
   const printReceipt = (payment) => {
     const info = getContractInfo(payment);
-    const receiptWindow = window.open('', '_blank', 'width=420,height=600');
+    const receiptWindow = window.open('', '_blank', 'width=340,height=600');
 
     // المتبقي من المدة المتبقية بين تاريخ اليوم وتاريخ انتهاء العقد بي الشهر
     const today = new Date();
@@ -234,23 +234,61 @@ function Payments() {
         <meta charset="UTF-8">
         <title>وصل دفع</title>
         <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
-          body { padding: 24px; color: #1e293b; }
-          .receipt { max-width: 360px; margin: 0 auto; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 24px; }
-          .header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px dashed #cbd5e1; }
-          .header h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-          .header p { font-size: 12px; color: #94a3b8; }
-          .row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13.5px; border-bottom: 1px solid #f1f5f9; }
-          .row span:first-child { color: #64748b; }
-          .row span:last-child { font-weight: 600; }
-          .amount-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; text-align: center; margin: 16px 0; }
-          .amount-box p { font-size: 12px; color: #15803d; margin-bottom: 4px; }
-          .amount-box h2 { font-size: 24px; color: #15803d; font-weight: 800; }
-          .balance-note { text-align: center; font-size: 13px; font-weight: 700; margin: 10px 0 16px; color: ${balanceStatusColor}; }
-          .footer { text-align: center; margin-top: 20px; padding-top: 16px; border-top: 2px dashed #cbd5e1; font-size: 11px; color: #94a3b8; }
+          /* تحديد مقاس الورقة بالظبط 80mm عرض، والطول تلقائي حسب المحتوى */
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+
+          html, body {
+            width: 80mm;
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            color: #000;
+            font-size: 12px;
+          }
+
+          .receipt {
+            width: 100%;
+            padding: 4mm 3mm;
+          }
+
+          .header { text-align: center; margin-bottom: 3mm; padding-bottom: 2.5mm; border-bottom: 1px dashed #000; }
+          .header h1 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+          .header p { font-size: 11px; color: #333; }
+
+          .row { display: flex; justify-content: space-between; padding: 1.2mm 0; font-size: 11.5px; border-bottom: 1px dotted #999; }
+          .row span:first-child { color: #333; }
+          .row span:last-child { font-weight: 700; }
+
+          .amount-box {
+            border: 1px dashed #000;
+            padding: 2.5mm;
+            text-align: center;
+            margin: 3mm 0;
+          }
+          .amount-box p { font-size: 11px; margin-bottom: 2px; }
+          .amount-box h2 { font-size: 18px; font-weight: 800; }
+
+          .balance-note {
+            text-align: center;
+            font-size: 11.5px;
+            font-weight: 700;
+            margin: 2mm 0 3mm;
+          }
+
+          .footer {
+            text-align: center;
+            margin-top: 3mm;
+            padding-top: 2.5mm;
+            border-top: 1px dashed #000;
+            font-size: 10px;
+            color: #333;
+          }
+
           @media print {
-            body { padding: 0; }
-            .receipt { border: none; }
+            html, body { width: 80mm; }
           }
         </style>
       </head>
@@ -275,7 +313,7 @@ function Payments() {
             <h2>${payment.amountPaid || 0} ج.م</h2>
           </div>
 
-          ${balanceStatusText ? `<div class="balance-note">${balanceStatusText}</div>` : ''}
+          ${balanceStatusText ? `<div class="balance-note" style="color: ${balanceStatusColor}">${balanceStatusText}</div>` : ''}
 
           <div class="footer">
             <p>شكراً لتعاملكم معنا</p>
