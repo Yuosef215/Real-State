@@ -228,162 +228,142 @@ function Payments() {
     const balanceStatusColor = balanceInfo?.isFullyPaid ? '#122218' : '#b91c1c';
 
     const receiptHtml = `
-     <!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
 
+<head>
+    <meta charset="UTF-8">
     <title>وصل دفع</title>
     <style>
-      @page {
-        size: 80mm auto;
-        margin: 0;
-      }
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
 
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
 
-      html,
-      body {
-        width: 80mm;
-        font-family: Arial, Helvetica, sans-serif;
-        color: #000000 !important;
-        font-size: 13px;
-        font-weight: 700;
-        background: #fff;
-      }
-
-      .receipt {
-        width: 100%;
-        padding: 3mm;
-      }
-
-      .header {
-        text-align: center;
-        margin-bottom: 4mm;
-        padding-bottom: 3mm;
-        border-bottom: 2px dashed #000;
-      }
-
-      .header h1 {
-        font-size: 18px;
-        font-weight: 900;
-        margin-bottom: 3px;
-      }
-
-      .header p {
-        font-size: 12px;
-        font-weight: 700;
-        color: #000;
-      }
-
-      .row {
-        display: flex;
-        justify-content: space-between;
-        padding: 2mm 0;
-        font-size: 13px;
-        font-weight: 700;
-        border-bottom: 1px dashed #000;
-      }
-
-      .row span {
-        color: #000 !important;
-      }
-
-      .amount-box {
-        border: 2px dashed #000;
-        padding: 3mm;
-        text-align: center;
-        margin: 4mm 0;
-      }
-
-      .amount-box p {
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 3px;
-      }
-
-      .amount-box h2 {
-        font-size: 24px;
-        font-weight: 900;
-      }
-
-      .balance-note {
-        text-align: center;
-        font-size: 12px;
-        font-weight: 800;
-        margin: 3mm 0;
-      }
-
-      .footer {
-        text-align: center;
-        margin-top: 4mm;
-        padding-top: 3mm;
-        border-top: 2px dashed #000;
-        font-size: 11px;
-        font-weight: 700;
-      }
-
-      @media print {
         html,
         body {
-          width: 80mm;
+            width: 80mm;
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            color: #000;
+            font-size: 15px;
         }
-      }
+
+        .receipt {
+            width: 100%;
+            padding: 2mm;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3mm;
+            padding-bottom: 2.5mm;
+            border-bottom: 1px dashed #000;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .header p {
+            font-size: 11px;
+            color: #000;
+            font-weight: 400;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 1.2mm 0;
+            font-size: 11.5px;
+            border-bottom: 1px dotted #999;
+        }
+
+        .row span:first-child {
+            color: #000;
+            font-weight: 400;
+        }
+
+        .row span:last-child {
+            font-weight: 700;
+        }
+
+        .amount-box {
+            border: 1px dashed #000;
+            padding: 2.5mm;
+            text-align: center;
+            margin: 3mm 0;
+        }
+
+        .amount-box p {
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+
+        .amount-box h2 {
+            font-size: 26px;
+            font-weight: 800;
+        }
+
+        .balance-note {
+            text-align: center;
+            font-size: 11.5px;
+            font-weight: 700;
+            margin: 2mm 0 3mm;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 3mm;
+            padding-top: 2.5mm;
+            border-top: 1px dashed #000;
+            font-size: 10px;
+            color: #000;
+        }
     </style>
-  </head>
-  <body>
+</head>
+
+<body>
     <div class="receipt">
-      <div class="header">
-        <h1>${COMPANY_NAME}</h1>
-        <p>وصل استلام دفعة إيجار</p>
-      </div>
+        <div class="header">
+            <h1>${COMPANY_NAME}</h1>
+            <p>وصل استلام دفعة إيجار</p>
+        </div>
 
-      <div class="row">
-        <span>المستأجر</span><span>${info.tenantName}</span>
-      </div>
-      <div class="row">
-        <span>العقار</span><span>${info.propertyName}</span>
-      </div>
-      <div class="row">
-        <span>الوحدة</span><span>شقة ${info.unitNumber}</span>
-      </div>
-      <div class="row">
-        <span>تاريخ الدفع</span
-        ><span>${payment.paymentDate?.substring(0, 10) || '—'}</span>
-      </div>
-      <div class="row">
-        <span>تاريخ بداية العقد</span
-        ><span>${payment.contract.startDate?.substring(0, 10) || '—'}</span>
-      </div>
-      <div class="row">
-        <span>تاريخ انتهاء العقد</span
-        ><span>${payment.contract.endDate?.substring(0, 10) || '—'}</span>
-      </div>
-      <div class="row">
-        <span>المدة المتبقية</span><span>${remainingTime} شهر</span>
-      </div>
-      <div class="row">
-        <span>طريقة الدفع</span><span>${payment.paymentMethod || 'نقدي'}</span>
-      </div>
+        <div class="row"><span>المستأجر</span><span>${info.tenantName}</span></div>
+        <div class="row"><span>العقار</span><span>${info.propertyName}</span></div>
+        <div class="row"><span>الوحدة</span><span>شقة ${info.unitNumber}</span></div>
+        <div class="row"><span>تاريخ الدفع</span><span>${payment.paymentDate?.substring(0, 10) || '—'}</span></div>
+        <div class="row"><span>تاريخ بداية العقد</span><span>${payment.contract.startDate?.substring(0, 10) ||
+                '—'}</span></div>
+        <div class="row"><span>تاريخ انتهاء العقد</span><span>${payment.contract.endDate?.substring(0, 10) ||
+                '—'}</span></div>
+        <div class="row"><span>المدة المتبقية</span><span>${remainingTime} شهر</span></div>
+        <div class="row"><span>طريقة الدفع</span><span>${payment.paymentMethod || 'نقدي'}</span></div>
 
-      <div class="amount-box">
-        <p>المبلغ المدفوع في هذه الدفعة</p>
-        <h2>${payment.amountPaid || 0} ج.م</h2>
-      </div>
-      ${balanceStatusText ? `
-      <div class="balance-note" style="color: ${balanceStatusColor}">
-        ${balanceStatusText}
-      </div>
-      ` : ''}
-      <div class="footer">
-        <p>شكراً لتعاملكم معنا</p>
-      </div>
+        <div class="amount-box">
+            <p>المبلغ المدفوع في هذه الدفعة</p>
+            <h2>${payment.amountPaid || 0} ج.م</h2>
+        </div>
+
+        ${balanceStatusText ? `<div class="balance-note" style="color: ${balanceStatusColor}">${balanceStatusText}</div>
+        ` : ''}
+
+        <div class="footer">
+            <p>شكراً لتعاملكم معنا</p>
+        </div>
     </div>
-  </body>
+</body>
+
 </html>
 
     `;
