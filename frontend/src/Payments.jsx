@@ -237,11 +237,11 @@ function Payments() {
     <style>
         @page {
             size: 80mm auto;
-            margin: 0;
+            margin: 1;
         }
 
         * {
-            margin: 0;
+            margin: 1;
             padding: 0;
             box-sizing: border-box;
             -webkit-print-color-adjust: exact;
@@ -298,8 +298,8 @@ function Payments() {
         }
 
         .amount-box {
-            border: 1px dashed #000;
-            padding: 2.5mm;
+            border: 1px solid #000;
+            padding: 1.5mm;
             text-align: center;
             margin: 3mm 0;
         }
