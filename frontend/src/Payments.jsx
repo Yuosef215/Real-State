@@ -225,7 +225,7 @@ function Payments() {
           ? 'تم سداد إيجار هذا الشهر بالكامل'
           : `متبقي على إيجار هذا الشهر: ${balanceInfo.remaining.toLocaleString('ar-EG')} ج.م`)
       : '';
-    const balanceStatusColor = balanceInfo?.isFullyPaid ? '#15803d' : '#b91c1c';
+    const balanceStatusColor = balanceInfo?.isFullyPaid ? '#122218' : '#b91c1c';
 
     const receiptHtml = `
       <!DOCTYPE html>
@@ -236,26 +236,26 @@ function Payments() {
         <style>
           /* تحديد مقاس الورقة بالظبط 80mm عرض، والطول تلقائي حسب المحتوى */
           @page {
-            size: 80mm auto;
+            size: 100mm auto;
             margin: 0;
           }
 
           * { margin: 0; padding: 0; box-sizing: border-box; }
 
           html, body {
-            width: 80mm;
+            width: 100mm;
             font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
             color: #000;
-            font-size: 12px;
+            font-size: 15px;
           }
 
           .receipt {
             width: 100%;
-            padding: 4mm 3mm;
+            padding: 2mm;
           }
 
           .header { text-align: center; margin-bottom: 3mm; padding-bottom: 2.5mm; border-bottom: 1px dashed #000; }
-          .header h1 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+          .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
           .header p { font-size: 11px; color: #333; }
 
           .row { display: flex; justify-content: space-between; padding: 1.2mm 0; font-size: 11.5px; border-bottom: 1px dotted #999; }
@@ -269,7 +269,7 @@ function Payments() {
             margin: 3mm 0;
           }
           .amount-box p { font-size: 11px; margin-bottom: 2px; }
-          .amount-box h2 { font-size: 18px; font-weight: 800; }
+          .amount-box h2 { font-size: 26px; font-weight: 800; }
 
           .balance-note {
             text-align: center;
