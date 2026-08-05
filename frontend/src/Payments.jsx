@@ -228,14 +228,164 @@ function Payments() {
     const balanceStatusColor = balanceInfo?.isFullyPaid ? '#122218' : '#b91c1c';
 
     const receiptHtml = `
-      <!DOCTYPE html>
-<html>
-<body style="width:80mm;font-size:30px;text-align:center">
-<h1>123456789</h1>
-<h1>ABCDEFG</h1>
-<h1>اختبار</h1>
-</body>
+     <!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+
+    <title>وصل دفع</title>
+    <style>
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 80mm;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #000000 !important;
+        font-size: 13px;
+        font-weight: 700;
+        background: #fff;
+      }
+
+      .receipt {
+        width: 100%;
+        padding: 3mm;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 4mm;
+        padding-bottom: 3mm;
+        border-bottom: 2px dashed #000;
+      }
+
+      .header h1 {
+        font-size: 18px;
+        font-weight: 900;
+        margin-bottom: 3px;
+      }
+
+      .header p {
+        font-size: 12px;
+        font-weight: 700;
+        color: #000;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 2mm 0;
+        font-size: 13px;
+        font-weight: 700;
+        border-bottom: 1px dashed #000;
+      }
+
+      .row span {
+        color: #000 !important;
+      }
+
+      .amount-box {
+        border: 2px dashed #000;
+        padding: 3mm;
+        text-align: center;
+        margin: 4mm 0;
+      }
+
+      .amount-box p {
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+
+      .amount-box h2 {
+        font-size: 24px;
+        font-weight: 900;
+      }
+
+      .balance-note {
+        text-align: center;
+        font-size: 12px;
+        font-weight: 800;
+        margin: 3mm 0;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 4mm;
+        padding-top: 3mm;
+        border-top: 2px dashed #000;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      @media print {
+        html,
+        body {
+          width: 80mm;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+      <div class="header">
+        <h1>${COMPANY_NAME}</h1>
+        <p>وصل استلام دفعة إيجار</p>
+      </div>
+
+      <div class="row">
+        <span>المستأجر</span><span>${info.tenantName}</span>
+      </div>
+      <div class="row">
+        <span>العقار</span><span>${info.propertyName}</span>
+      </div>
+      <div class="row">
+        <span>الوحدة</span><span>شقة ${info.unitNumber}</span>
+      </div>
+      <div class="row">
+        <span>تاريخ الدفع</span
+        ><span>${payment.paymentDate?.substring(0, 10) || '—'}</span>
+      </div>
+      <div class="row">
+        <span>تاريخ بداية العقد</span
+        ><span>${payment.contract.startDate?.substring(0, 10) || '—'}</span>
+      </div>
+      <div class="row">
+        <span>تاريخ انتهاء العقد</span
+        ><span>${payment.contract.endDate?.substring(0, 10) || '—'}</span>
+      </div>
+      <div class="row">
+        <span>المدة المتبقية</span><span>${remainingTime} شهر</span>
+      </div>
+      <div class="row">
+        <span>طريقة الدفع</span><span>${payment.paymentMethod || 'نقدي'}</span>
+      </div>
+
+      <div class="amount-box">
+        <p>المبلغ المدفوع في هذه الدفعة</p>
+        <h2>${payment.amountPaid || 0} ج.م</h2>
+      </div>
+      ${balanceStatusText ? `
+      <div class="balance-note" style="color: ${balanceStatusColor}">
+        ${balanceStatusText}
+      </div>
+      ` : ''}
+      <div class="footer">
+        <p>شكراً لتعاملكم معنا</p>
+      </div>
+    </div>
+  </body>
 </html>
+
     `;
 
     receiptWindow.document.write(receiptHtml);
