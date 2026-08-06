@@ -250,7 +250,7 @@ function Payments() {
 
         html,
         body {
-            width: 80mm;
+            width: 75mm;
             font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
             color: #000;
             font-size: 15px;
@@ -258,7 +258,7 @@ function Payments() {
 
         .receipt {
             width: 100%;
-            padding: 2mm;
+            padding: 0mm;
         }
 
         .header {
