@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import axios from "axios";
 import { FaPrint } from "react-icons/fa6";
 import { FaHome } from "react-icons/fa";
 import { MdRealEstateAgent } from "react-icons/md";
@@ -18,22 +18,46 @@ const PAYMENTS_BASE = `${API_BASE_URL}/payments`;
 const CONTRACTS_BASE = `${API_BASE_URL}/contracts`;
 
 // ====== اسم الشركة الظاهر على الوصل ======
-const COMPANY_NAME = 'مؤسسه الشروق 3';
+const COMPANY_NAME = "مؤسسه الشروق 3";
 
 const size = 25;
 const NAV_ITEMS = [
-  { label: 'الرئيسية', path: '/dashboard', icon: <FaHome size={size} color='black'/> },
-  { label: 'العقارات', path: '/properties', icon: <MdRealEstateAgent size={size} color='black'/> },
-  { label: 'الوحدات', path: '/units', icon:  <PiBuildingApartmentFill size={size} color='black'/>},
-  { label: 'المستأجرين', path: '/tenants', icon: <IoIosPeople size={size} color='black'/> },
-  { label: 'العقود', path: '/contracts', icon: <LiaFileContractSolid size={size} color='black'/>},
-  { label: 'الدفع', path: '/payments', icon: <MdPayments size={size} color='black'/>},
+  {
+    label: "الرئيسية",
+    path: "/dashboard",
+    icon: <FaHome size={size} color="black" />,
+  },
+  {
+    label: "العقارات",
+    path: "/properties",
+    icon: <MdRealEstateAgent size={size} color="black" />,
+  },
+  {
+    label: "الوحدات",
+    path: "/units",
+    icon: <PiBuildingApartmentFill size={size} color="black" />,
+  },
+  {
+    label: "المستأجرين",
+    path: "/tenants",
+    icon: <IoIosPeople size={size} color="black" />,
+  },
+  {
+    label: "العقود",
+    path: "/contracts",
+    icon: <LiaFileContractSolid size={size} color="black" />,
+  },
+  {
+    label: "الدفع",
+    path: "/payments",
+    icon: <MdPayments size={size} color="black" />,
+  },
 ];
 
 const PAYMENT_STATUSES = [
-  { value: 'paid', label: 'مدفوع' },
-  { value: 'pending', label: 'معلق' },
-  { value: 'late', label: 'متأخر' },
+  { value: "paid", label: "مدفوع" },
+  { value: "pending", label: "معلق" },
+  { value: "late", label: "متأخر" },
 ];
 
 function statusLabel(value) {
@@ -41,19 +65,19 @@ function statusLabel(value) {
 }
 
 function statusColor(value) {
-  if (value === 'paid') return 'bg-green-50 text-green-600';
-  if (value === 'late') return 'bg-red-50 text-red-600';
-  return 'bg-amber-50 text-amber-600';
+  if (value === "paid") return "bg-green-50 text-green-600";
+  if (value === "late") return "bg-red-50 text-red-600";
+  return "bg-amber-50 text-amber-600";
 }
 
 const EMPTY_FORM = {
-  contractId: '',
-  amount: '',
-  status: 'pending',
+  contractId: "",
+  amount: "",
+  status: "pending",
 };
 
 function authHeaders() {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -63,7 +87,7 @@ function Payments() {
   const [payments, setPayments] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -72,33 +96,37 @@ function Payments() {
   const [saving, setSaving] = useState(false);
 
   // ====== البحث داخل قائمة اختيار العقد ======
-  const [contractSearch, setContractSearch] = useState('');
+  const [contractSearch, setContractSearch] = useState("");
   const [showContractOptions, setShowContractOptions] = useState(false);
 
   // ====== ملخص دفعة العقد المختار (المطلوب/المدفوع/المتبقي/الحالة) لشهر الدفع الحالي ======
   const [paymentSummary, setPaymentSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState('');
+  const [summaryError, setSummaryError] = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   // بيانات العقد/المستأجر/الوحدة بترجع populate جوا الدفعة نفسها
   const getContractInfo = (payment) => {
-    const contract = payment.contract || contracts.find((c) => (c._id || c.id) === payment.contractId);
+    const contract =
+      payment.contract ||
+      contracts.find((c) => (c._id || c.id) === payment.contractId);
     return {
-      tenantName: contract?.tenant?.name || '—',
-      unitNumber: contract?.unit?.unitNumber ?? '—',
-      propertyName: contract?.unit?.property?.name || '—',
-      contractLabel: contract ? `عقد #${(contract._id || contract.id).toString().slice(-5)}` : '—',
+      tenantName: contract?.tenant?.name || "—",
+      unitNumber: contract?.unit?.unitNumber ?? "—",
+      propertyName: contract?.unit?.property?.name || "—",
+      contractLabel: contract
+        ? `عقد #${(contract._id || contract.id).toString().slice(-5)}`
+        : "—",
     };
   };
 
   // النص الظاهر لكل عقد داخل قائمة الاختيار
   const contractDisplayLabel = (c) => {
-    const tenantName = c.tenant?.name || '—';
-    const propertyName = c.unit?.property?.name || '—';
-    const unitNumber = c.unit?.unitNumber ?? '—';
+    const tenantName = c.tenant?.name || "—";
+    const propertyName = c.unit?.property?.name || "—";
+    const unitNumber = c.unit?.unitNumber ?? "—";
     return `عقد ${tenantName} - عقار ${propertyName} - شقة ${unitNumber}`;
   };
 
@@ -106,9 +134,9 @@ function Payments() {
   const filteredContracts = contracts.filter((c) => {
     const q = contractSearch.trim().toLowerCase();
     if (!q) return true;
-    const tenantName = (c.tenant?.name || '').toLowerCase();
-    const propertyName = (c.unit?.property?.name || '').toLowerCase();
-    const unitNumber = (c.unit?.unitNumber ?? '').toString().toLowerCase();
+    const tenantName = (c.tenant?.name || "").toLowerCase();
+    const propertyName = (c.unit?.property?.name || "").toLowerCase();
+    const unitNumber = (c.unit?.unitNumber ?? "").toString().toLowerCase();
     return (
       tenantName.includes(q) ||
       propertyName.includes(q) ||
@@ -129,15 +157,18 @@ function Payments() {
       return;
     }
     setSummaryLoading(true);
-    setSummaryError('');
+    setSummaryError("");
     try {
-      const res = await axios.get(`${PAYMENTS_BASE}/payment-summary/${contractId}`, {
-        headers: authHeaders(),
-      });
+      const res = await axios.get(
+        `${PAYMENTS_BASE}/payment-summary/${contractId}`,
+        {
+          headers: authHeaders(),
+        },
+      );
       setPaymentSummary(res.data?.data || null);
     } catch (err) {
       setPaymentSummary(null);
-      setSummaryError('تعذر جلب ملخص المدفوعات لهذا العقد');
+      setSummaryError("تعذر جلب ملخص المدفوعات لهذا العقد");
     } finally {
       setSummaryLoading(false);
     }
@@ -148,7 +179,7 @@ function Payments() {
       fetchPaymentSummary(form.contractId);
     } else {
       setPaymentSummary(null);
-      setSummaryError('');
+      setSummaryError("");
     }
   }, [form.contractId]);
 
@@ -167,7 +198,10 @@ function Payments() {
       return pContractId === contractId && p.month === month && p.year === year;
     });
 
-    const totalPaid = samePeriodPayments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
+    const totalPaid = samePeriodPayments.reduce(
+      (sum, p) => sum + (p.amountPaid || 0),
+      0,
+    );
     const remaining = (contract.monthlyRent || 0) - totalPaid;
 
     return {
@@ -180,9 +214,12 @@ function Payments() {
   // نص ولون عرض المتبقي في الجدول/الكروت
   const remainingBalanceDisplay = (payment) => {
     const info = getRemainingForPayment(payment);
-    if (!info) return { text: '—', color: 'text-slate-400' };
-    if (info.isFullyPaid) return { text: 'تم السداد', color: 'text-green-600' };
-    return { text: `${info.remaining.toLocaleString('ar-EG')} ج.م`, color: 'text-red-600' };
+    if (!info) return { text: "—", color: "text-slate-400" };
+    if (info.isFullyPaid) return { text: "تم السداد", color: "text-green-600" };
+    return {
+      text: `${info.remaining.toLocaleString("ar-EG")} ج.م`,
+      color: "text-red-600",
+    };
   };
 
   // هل على العقد ده متبقي فعلي لنفس الشهر (لإظهار زرار دفع المتبقي أو لا)
@@ -201,7 +238,7 @@ function Payments() {
     setForm({
       contractId: contract._id || contract.id,
       amount: info.remaining,
-      status: 'pending',
+      status: "pending",
     });
     setContractSearch(contractDisplayLabel(contract));
     setShowContractOptions(false);
@@ -211,21 +248,24 @@ function Payments() {
 
   const printReceipt = (payment) => {
     const info = getContractInfo(payment);
-    const receiptWindow = window.open('', '_blank', 'width=340,height=600');
+    const receiptWindow = window.open("", "_blank", "width=340,height=600");
 
     // المتبقي من المدة المتبقية بين تاريخ اليوم وتاريخ انتهاء العقد بي الشهر
     const today = new Date();
     const endDate = new Date(payment.contract.endDate);
-    const remainingTime = endDate > today ? Math.ceil((endDate - today) / (1000 * 60 * 60 * 24 * 30)) : 0;
+    const remainingTime =
+      endDate > today
+        ? Math.ceil((endDate - today) / (1000 * 60 * 60 * 24 * 30))
+        : 0;
 
     // حالة سداد هذا الشهر (مدفوع بالكامل أو لسه فيه متبقي) لعرضها في الوصل
     const balanceInfo = getRemainingForPayment(payment);
     const balanceStatusText = balanceInfo
-      ? (balanceInfo.isFullyPaid
-          ? 'تم سداد إيجار هذا الشهر بالكامل'
-          : `متبقي على إيجار هذا الشهر: ${balanceInfo.remaining.toLocaleString('ar-EG')} ج.م`)
-      : '';
-    const balanceStatusColor = balanceInfo?.isFullyPaid ? '#122218' : '#b91c1c';
+      ? balanceInfo.isFullyPaid
+        ? "تم سداد إيجار هذا الشهر بالكامل"
+        : `متبقي على إيجار هذا الشهر: ${balanceInfo.remaining.toLocaleString("ar-EG")} ج.م`
+      : "";
+    const balanceStatusColor = balanceInfo?.isFullyPaid ? "#122218" : "#b91c1c";
 
     const receiptHtml = `
 <!DOCTYPE html>
@@ -237,11 +277,11 @@ function Payments() {
     <style>
         @page {
             size: 80mm auto;
-            margin: 1;
+            margin: 0;
         }
 
         * {
-            margin: 1;
+            margin: 0;
             padding: 0;
             box-sizing: border-box;
             -webkit-print-color-adjust: exact;
@@ -251,6 +291,7 @@ function Payments() {
         html,
         body {
             width: 75mm;
+            margin: 0 auto;
             font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
             color: #000;
             font-size: 15px;
@@ -280,22 +321,25 @@ function Payments() {
             font-weight: 400;
         }
 
-        .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 1.2mm 0;
-            font-size: 11.5px;
-            border-bottom: 1px dotted #999;
-        }
+        .row{
+          display:grid;
+          grid-template-columns:32mm 32mm;
+          align-items:center;
+          gap:2mm;
+          padding:2mm 0;
+          border-bottom:1px dotted #999;
+      }
 
-        .row span:first-child {
-            color: #000;
-            font-weight: 400;
-        }
+      .row span:first-child{
+          text-align:right;
+          font-weight:600;
+      }
 
-        .row span:last-child {
-            font-weight: 700;
-        }
+      .row span:last-child{
+          text-align:left;
+          font-weight:700;
+          overflow-wrap:anywhere;
+      }
 
         .amount-box {
             border: 1px solid #000;
@@ -342,21 +386,27 @@ function Payments() {
         <div class="row"><span>المستأجر</span><span>${info.tenantName}</span></div>
         <div class="row"><span>العقار</span><span>${info.propertyName}</span></div>
         <div class="row"><span>الوحدة</span><span>شقة ${info.unitNumber}</span></div>
-        <div class="row"><span>تاريخ الدفع</span><span>${payment.paymentDate?.substring(0, 10) || '—'}</span></div>
-        <div class="row"><span>تاريخ بداية العقد</span><span>${payment.contract.startDate?.substring(0, 10) ||
-                '—'}</span></div>
-        <div class="row"><span>تاريخ انتهاء العقد</span><span>${payment.contract.endDate?.substring(0, 10) ||
-                '—'}</span></div>
+        <div class="row"><span>تاريخ الدفع</span><span>${payment.paymentDate?.substring(0, 10) || "—"}</span></div>
+        <div class="row"><span>تاريخ بداية العقد</span><span>${
+          payment.contract.startDate?.substring(0, 10) || "—"
+        }</span></div>
+        <div class="row"><span>تاريخ انتهاء العقد</span><span>${
+          payment.contract.endDate?.substring(0, 10) || "—"
+        }</span></div>
         <div class="row"><span>المدة المتبقية</span><span>${remainingTime} شهر</span></div>
-        <div class="row"><span>طريقة الدفع</span><span>${payment.paymentMethod || 'نقدي'}</span></div>
+        <div class="row"><span>طريقة الدفع</span><span>${payment.paymentMethod || "نقدي"}</span></div>
 
         <div class="amount-box">
             <p>المبلغ المدفوع في هذه الدفعة</p>
             <h2>${payment.amountPaid || 0} ج.م</h2>
         </div>
 
-        ${balanceStatusText ? `<div class="balance-note" style="color: ${balanceStatusColor}">${balanceStatusText}</div>
-        ` : ''}
+        ${
+          balanceStatusText
+            ? `<div class="balance-note" style="color: ${balanceStatusColor}">${balanceStatusText}</div>
+        `
+            : ""
+        }
 
         <div class="footer">
             <p>شكراً لتعاملكم معنا</p>
@@ -376,23 +426,30 @@ function Payments() {
     };
   };
 
-
   const fetchAll = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const [paymentsRes, contractsRes] = await Promise.all([
         axios.get(`${PAYMENTS_BASE}/all_payments`, { headers: authHeaders() }),
         axios.get(`${CONTRACTS_BASE}/get_contract`, { headers: authHeaders() }),
       ]);
 
-      const paymentsList = paymentsRes.data?.data || paymentsRes.data?.payments || paymentsRes.data || [];
-      const contractsList = contractsRes.data?.data || contractsRes.data?.contracts || contractsRes.data || [];
+      const paymentsList =
+        paymentsRes.data?.data ||
+        paymentsRes.data?.payments ||
+        paymentsRes.data ||
+        [];
+      const contractsList =
+        contractsRes.data?.data ||
+        contractsRes.data?.contracts ||
+        contractsRes.data ||
+        [];
 
       setPayments(Array.isArray(paymentsList) ? paymentsList : []);
       setContracts(Array.isArray(contractsList) ? contractsList : []);
     } catch (err) {
-      setError('تعذر تحميل البيانات، تأكد إن السيرفر شغال');
+      setError("تعذر تحميل البيانات، تأكد إن السيرفر شغال");
     } finally {
       setLoading(false);
     }
@@ -406,22 +463,24 @@ function Payments() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormErrors({});
-    setContractSearch('');
+    setContractSearch("");
     setShowContractOptions(false);
     setShowModal(true);
   };
 
   const openEditModal = (payment) => {
     setEditingId(payment._id || payment.id);
-    const contractId = payment.contractId || payment.contract?._id || payment.contract || '';
+    const contractId =
+      payment.contractId || payment.contract?._id || payment.contract || "";
     setForm({
       contractId,
-      amount: payment.amountPaid ?? payment.amount ?? '',
-      status: payment.status || 'pending',
+      amount: payment.amountPaid ?? payment.amount ?? "",
+      status: payment.status || "pending",
     });
     // تعبئة خانة البحث باسم العقد المختار عند التعديل
-    const contract = payment.contract || contracts.find((c) => (c._id || c.id) === contractId);
-    setContractSearch(contract ? contractDisplayLabel(contract) : '');
+    const contract =
+      payment.contract || contracts.find((c) => (c._id || c.id) === contractId);
+    setContractSearch(contract ? contractDisplayLabel(contract) : "");
     setShowContractOptions(false);
     setFormErrors({});
     setShowModal(true);
@@ -431,14 +490,15 @@ function Payments() {
     setShowModal(false);
     setForm(EMPTY_FORM);
     setFormErrors({});
-    setContractSearch('');
+    setContractSearch("");
     setShowContractOptions(false);
   };
 
   const validateForm = () => {
     const errs = {};
-    if (!form.contractId) errs.contractId = 'اختر العقد من القائمة';
-    if (!form.amount || Number(form.amount) <= 0) errs.amount = 'أدخل مبلغ صحيح';
+    if (!form.contractId) errs.contractId = "اختر العقد من القائمة";
+    if (!form.amount || Number(form.amount) <= 0)
+      errs.amount = "أدخل مبلغ صحيح";
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -468,7 +528,7 @@ function Payments() {
       closeModal();
       fetchAll();
     } catch (err) {
-      const message = err.response?.data?.message || 'حدث خطأ أثناء الحفظ';
+      const message = err.response?.data?.message || "حدث خطأ أثناء الحفظ";
       setFormErrors({ general: message });
     } finally {
       setSaving(false);
@@ -479,13 +539,16 @@ function Payments() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await axios.delete(`${PAYMENTS_BASE}/payment/${deleteTarget._id || deleteTarget.id}`, {
-        headers: authHeaders(),
-      });
+      await axios.delete(
+        `${PAYMENTS_BASE}/payment/${deleteTarget._id || deleteTarget.id}`,
+        {
+          headers: authHeaders(),
+        },
+      );
       setDeleteTarget(null);
       fetchAll();
     } catch (err) {
-      setError('تعذر حذف الدفعة، حاول مرة أخرى');
+      setError("تعذر حذف الدفعة، حاول مرة أخرى");
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -494,12 +557,13 @@ function Payments() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-slate-100 flex font-sans">
-
       {/* ===== Sidebar (Desktop) ===== */}
       <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-l border-slate-200 min-h-screen sticky top-0">
         <div className="p-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl"><img src="/logo.png" alt="" /></div>
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl">
+              <img src="/logo.png" alt="" />
+            </div>
             <h1 className="text-sm font-bold text-slate-800">مؤسسه الشروق 3</h1>
           </div>
         </div>
@@ -511,7 +575,9 @@ function Payments() {
                 key={item.path}
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-sm font-medium transition-colors ${
-                  active ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
+                  active
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-slate-600 hover:bg-slate-50"
                 }`}
               >
                 <span className="text-lg">{item.icon}</span>
@@ -536,7 +602,6 @@ function Payments() {
         </header>
 
         <div className="p-4 md:p-8 pb-24 md:pb-8">
-
           {loading && (
             <div className="flex items-center justify-center py-20">
               <span className="w-8 h-8 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin"></span>
@@ -562,21 +627,51 @@ function Payments() {
                 {payments.map((p) => {
                   const info = getContractInfo(p);
                   return (
-                    <div key={p._id || p.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                    <div
+                      key={p._id || p.id}
+                      className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
+                    >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-bold text-slate-800">{info.tenantName}</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full ${statusColor(p.status)}`}>
+                        <h3 className="font-bold text-slate-800">
+                          {info.tenantName}
+                        </h3>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${statusColor(p.status)}`}
+                        >
                           {statusLabel(p.status)}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-500 mb-1"><FaHome color="blue" className="inline-block ml-1" /> {info.propertyName} - شقة {info.unitNumber}</p>
-                      <p className="text-sm text-slate-500 mb-1"><FaMoneyBill color="green" className="inline-block ml-1" /> {p.amountPaid} ج.م</p>
-                      <p className="text-sm text-slate-500 mb-1"><FaCalendar color="purple" className="inline-block ml-1" /> {p.paymentDate?.substring(0, 10)}</p>
-                      <p className="text-sm text-slate-500 mb-1"><FaCreditCard color="orange" className="inline-block ml-1" /> {p.paymentMethod || 'نقدي'}</p>
+                      <p className="text-sm text-slate-500 mb-1">
+                        <FaHome color="blue" className="inline-block ml-1" />{" "}
+                        {info.propertyName} - شقة {info.unitNumber}
+                      </p>
+                      <p className="text-sm text-slate-500 mb-1">
+                        <FaMoneyBill
+                          color="green"
+                          className="inline-block ml-1"
+                        />{" "}
+                        {p.amountPaid} ج.م
+                      </p>
+                      <p className="text-sm text-slate-500 mb-1">
+                        <FaCalendar
+                          color="purple"
+                          className="inline-block ml-1"
+                        />{" "}
+                        {p.paymentDate?.substring(0, 10)}
+                      </p>
+                      <p className="text-sm text-slate-500 mb-1">
+                        <FaCreditCard
+                          color="orange"
+                          className="inline-block ml-1"
+                        />{" "}
+                        {p.paymentMethod || "نقدي"}
+                      </p>
                       {(() => {
                         const remaining = remainingBalanceDisplay(p);
                         return (
-                          <p className={`text-sm mb-3 font-semibold ${remaining.color}`}>
+                          <p
+                            className={`text-sm mb-3 font-semibold ${remaining.color}`}
+                          >
                             المتبقي: {remaining.text}
                           </p>
                         );
@@ -586,7 +681,7 @@ function Payments() {
                           onClick={() => printReceipt(p)}
                           className="flex-1 text-sm font-medium text-slate-600 bg-slate-100 py-2 rounded-lg flex items-center justify-center gap-1"
                         >
-                          <FaPrint/> طباعة
+                          <FaPrint /> طباعة
                         </button>
                         {hasRemainingBalance(p) && (
                           <button
@@ -620,8 +715,12 @@ function Payments() {
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-right">
                       <th className="py-3 px-5 font-semibold">المستأجر</th>
-                      <th className="py-3 px-5 font-semibold">العقار / الوحدة</th>
-                      <th className="py-3 px-5 font-semibold">المبلغ المدفوع</th>
+                      <th className="py-3 px-5 font-semibold">
+                        العقار / الوحدة
+                      </th>
+                      <th className="py-3 px-5 font-semibold">
+                        المبلغ المدفوع
+                      </th>
                       <th className="py-3 px-5 font-semibold">المتبقي</th>
                       <th className="py-3 px-5 font-semibold">تاريخ الدفع</th>
                       <th className="py-3 px-5 font-semibold">طريقة الدفع</th>
@@ -633,20 +732,40 @@ function Payments() {
                       const info = getContractInfo(p);
                       const remaining = remainingBalanceDisplay(p);
                       return (
-                        <tr key={p._id || p.id} className="border-t border-slate-100 hover:bg-slate-50">
-                          <td className="py-3 px-5 font-medium text-slate-800">{info.tenantName}</td>
-                          <td className="py-3 px-5 text-slate-600">{info.propertyName} - شقة {info.unitNumber}</td>
-                          <td className="py-3 px-5 text-slate-600">{p.amountPaid} ج.م</td>
-                          <td className={`py-3 px-5 font-semibold ${remaining.color}`}>{remaining.text}</td>
-                          <td className="py-3 px-5 text-slate-600">{p.paymentDate?.substring(0, 10)}</td>
-                          <td className="py-3 px-5 text-slate-600">{p.paymentMethod || 'نقدي'}</td>
+                        <tr
+                          key={p._id || p.id}
+                          className="border-t border-slate-100 hover:bg-slate-50"
+                        >
+                          <td className="py-3 px-5 font-medium text-slate-800">
+                            {info.tenantName}
+                          </td>
+                          <td className="py-3 px-5 text-slate-600">
+                            {info.propertyName} - شقة {info.unitNumber}
+                          </td>
+                          <td className="py-3 px-5 text-slate-600">
+                            {p.amountPaid} ج.م
+                          </td>
+                          <td
+                            className={`py-3 px-5 font-semibold ${remaining.color}`}
+                          >
+                            {remaining.text}
+                          </td>
+                          <td className="py-3 px-5 text-slate-600">
+                            {p.paymentDate?.substring(0, 10)}
+                          </td>
+                          <td className="py-3 px-5 text-slate-600">
+                            {p.paymentMethod || "نقدي"}
+                          </td>
                           <td className="py-3 px-5">
                             <div className="flex gap-3 flex-wrap">
                               <button
                                 onClick={() => printReceipt(p)}
                                 className="text-slate-600 hover:underline font-medium"
                               >
-                                <span><FaPrint /></span> طباعة
+                                <span>
+                                  <FaPrint />
+                                </span>{" "}
+                                طباعة
                               </button>
                               {hasRemainingBalance(p) && (
                                 <button
@@ -690,7 +809,7 @@ function Payments() {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium min-w-[55px] shrink-0 ${
-                active ? 'text-blue-600' : 'text-slate-500'
+                active ? "text-blue-600" : "text-slate-500"
               }`}
             >
               <span className="text-lg">{item.icon}</span>
@@ -705,8 +824,15 @@ function Payments() {
         <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-30 p-0 sm:p-4">
           <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white">
-              <h3 className="font-bold text-slate-800">{editingId ? 'تعديل الدفعة' : 'إضافة دفعة جديدة'}</h3>
-              <button onClick={closeModal} className="text-slate-400 text-xl leading-none">✕</button>
+              <h3 className="font-bold text-slate-800">
+                {editingId ? "تعديل الدفعة" : "إضافة دفعة جديدة"}
+              </h3>
+              <button
+                onClick={closeModal}
+                className="text-slate-400 text-xl leading-none"
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -718,12 +844,16 @@ function Payments() {
 
               {editingId && (
                 <div className="bg-blue-50 text-blue-700 border border-blue-200 rounded-lg p-3 text-xs">
-                  هذا تعديل لبيانات نفس الدفعة (تصحيح المبلغ أو الحالة). لو عايز تسجل باقي المبلغ المتبقي على العقد، استخدم زرار "دفع المتبقي" من الجدول بدل التعديل هنا.
+                  هذا تعديل لبيانات نفس الدفعة (تصحيح المبلغ أو الحالة). لو عايز
+                  تسجل باقي المبلغ المتبقي على العقد، استخدم زرار "دفع المتبقي"
+                  من الجدول بدل التعديل هنا.
                 </div>
               )}
 
               <div className="relative">
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">العقد</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  العقد
+                </label>
                 <input
                   type="text"
                   value={contractSearch}
@@ -731,7 +861,7 @@ function Payments() {
                     setContractSearch(e.target.value);
                     setShowContractOptions(true);
                     if (form.contractId) {
-                      setForm({ ...form, contractId: '' });
+                      setForm({ ...form, contractId: "" });
                     }
                   }}
                   onFocus={() => setShowContractOptions(true)}
@@ -740,7 +870,9 @@ function Payments() {
                   }}
                   placeholder="اكتب اسم المستأجر أو العقار أو رقم الوحدة للبحث..."
                   className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
-                    formErrors.contractId ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
+                    formErrors.contractId
+                      ? "border-red-500"
+                      : "border-slate-200 focus:border-blue-600"
                   }`}
                 />
 
@@ -764,7 +896,11 @@ function Payments() {
                   </div>
                 )}
 
-                {formErrors.contractId && <p className="text-red-500 text-xs mt-1">{formErrors.contractId}</p>}
+                {formErrors.contractId && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {formErrors.contractId}
+                  </p>
+                )}
               </div>
 
               {/* ===== كارت ملخص دفعة العقد المختار ===== */}
@@ -777,36 +913,50 @@ function Payments() {
                   )}
 
                   {!summaryLoading && summaryError && (
-                    <p className="text-red-500 text-xs text-center">{summaryError}</p>
+                    <p className="text-red-500 text-xs text-center">
+                      {summaryError}
+                    </p>
                   )}
 
                   {!summaryLoading && !summaryError && paymentSummary && (
                     <div className="space-y-1.5 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-500">الإيجار الشهري</span>
-                        <span className="font-semibold text-slate-700">{paymentSummary.monthlyRent.toLocaleString('ar-EG')} ج.م</span>
+                        <span className="font-semibold text-slate-700">
+                          {paymentSummary.monthlyRent.toLocaleString("ar-EG")}{" "}
+                          ج.م
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">المدفوع هذا الشهر</span>
-                        <span className="font-semibold text-green-600">{paymentSummary.paidAmount.toLocaleString('ar-EG')} ج.م</span>
+                        <span className="text-slate-500">
+                          المدفوع هذا الشهر
+                        </span>
+                        <span className="font-semibold text-green-600">
+                          {paymentSummary.paidAmount.toLocaleString("ar-EG")}{" "}
+                          ج.م
+                        </span>
                       </div>
                       <div className="flex justify-between pt-1.5 border-t border-slate-200">
-                        <span className="text-slate-700 font-semibold">المتبقي هذا الشهر</span>
-                        <span className={`font-bold ${paymentSummary.remainingAmount <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className="text-slate-700 font-semibold">
+                          المتبقي هذا الشهر
+                        </span>
+                        <span
+                          className={`font-bold ${paymentSummary.remainingAmount <= 0 ? "text-green-600" : "text-red-600"}`}
+                        >
                           {paymentSummary.remainingAmount > 0
-                            ? `${paymentSummary.remainingAmount.toLocaleString('ar-EG')} ج.م`
-                            : 'تم السداد بالكامل'}
+                            ? `${paymentSummary.remainingAmount.toLocaleString("ar-EG")} ج.م`
+                            : "تم السداد بالكامل"}
                         </span>
                       </div>
                       <div className="flex justify-between pt-1">
                         <span className="text-slate-500">الحالة</span>
                         <span
                           className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                            paymentSummary.status === 'مدفوع'
-                              ? 'bg-green-50 text-green-600'
-                              : paymentSummary.status === 'مدفوع جزئياً'
-                              ? 'bg-amber-50 text-amber-600'
-                              : 'bg-red-50 text-red-600'
+                            paymentSummary.status === "مدفوع"
+                              ? "bg-green-50 text-green-600"
+                              : paymentSummary.status === "مدفوع جزئياً"
+                                ? "bg-amber-50 text-amber-600"
+                                : "bg-red-50 text-red-600"
                           }`}
                         >
                           {paymentSummary.status}
@@ -819,11 +969,18 @@ function Payments() {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-semibold text-slate-700">المبلغ</label>
+                  <label className="block text-sm font-semibold text-slate-700">
+                    المبلغ
+                  </label>
                   {paymentSummary && paymentSummary.remainingAmount > 0 && (
                     <button
                       type="button"
-                      onClick={() => setForm({ ...form, amount: paymentSummary.remainingAmount })}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          amount: paymentSummary.remainingAmount,
+                        })
+                      }
                       className="text-xs text-blue-600 font-medium hover:underline"
                     >
                       دفع المتبقي كامل
@@ -836,16 +993,26 @@ function Payments() {
                   value={form.amount}
                   onChange={(e) => setForm({ ...form, amount: e.target.value })}
                   className={`w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none ${
-                    formErrors.amount ? 'border-red-500' : 'border-slate-200 focus:border-blue-600'
+                    formErrors.amount
+                      ? "border-red-500"
+                      : "border-slate-200 focus:border-blue-600"
                   }`}
                   placeholder="يمكنك دفع المبلغ كامل أو جزء منه"
                 />
-                {formErrors.amount && <p className="text-red-500 text-xs mt-1">{formErrors.amount}</p>}
-                <p className="text-xs text-slate-400 mt-1">تاريخ الدفعة يُسجَّل تلقائياً بتاريخ اليوم</p>
+                {formErrors.amount && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {formErrors.amount}
+                  </p>
+                )}
+                <p className="text-xs text-slate-400 mt-1">
+                  تاريخ الدفعة يُسجَّل تلقائياً بتاريخ اليوم
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">طريقة الدفع</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  طريقة الدفع
+                </label>
                 <input
                   type="text"
                   value="نقدي"
@@ -855,14 +1022,18 @@ function Payments() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">حالة الدفعة</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  حالة الدفعة
+                </label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600"
                 >
                   {PAYMENT_STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -880,7 +1051,11 @@ function Payments() {
                   disabled={saving}
                   className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold text-sm"
                 >
-                  {saving ? 'جاري الحفظ...' : editingId ? 'حفظ التعديلات' : 'إضافة الدفعة'}
+                  {saving
+                    ? "جاري الحفظ..."
+                    : editingId
+                      ? "حفظ التعديلات"
+                      : "إضافة الدفعة"}
                 </button>
               </div>
             </form>
@@ -908,7 +1083,7 @@ function Payments() {
                 disabled={deleting}
                 className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-bold text-sm"
               >
-                {deleting ? 'جاري الحذف...' : 'حذف'}
+                {deleting ? "جاري الحذف..." : "حذف"}
               </button>
             </div>
           </div>
