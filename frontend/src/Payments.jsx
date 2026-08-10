@@ -373,6 +373,22 @@ function Payments() {
             font-size: 10px;
             color: #000;
         }
+            .developer {
+    margin-top: 3mm;
+    padding-top: 2mm;
+    border-top: 1px dotted #999;
+    font-size: 8.5px;
+    line-height: 1.5;
+}
+
+.developer strong {
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.developer p {
+    margin: 0;
+}
     </style>
 </head>
 
@@ -409,8 +425,16 @@ function Payments() {
         }
 
         <div class="footer">
-            <p>شكراً لتعاملكم معنا</p>
-        </div>
+    <p>شكراً لتعاملكم معنا</p>
+
+    <div class="developer">
+        <p>برمجة وتطوير</p>
+        <strong>Youssef Alaa</strong>
+        <p>Software Developer</p>
+        <p>01006109902</p>
+    </div>
+</div>
+
     </div>
 </body>
 
