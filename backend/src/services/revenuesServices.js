@@ -50,10 +50,11 @@ export const getAllRevenues = asyncHandler(async (req, res, next) => {
       return next(new ApiError("السنة غير صحيحة", 400));
     }
 
-    // أول وآخر لحظة في الشهر المطلوب
+    // أول وآخر لحظة في الشهر المطلوب بتوقيت UTC
+    // (التواريخ متخزنة UTC، فلازم الحدود تبقى UTC مهما كان توقيت السيرفر)
     filter.revenuesDate = {
-      $gte: new Date(year, month - 1, 1, 0, 0, 0, 0),
-      $lte: new Date(year, month, 0, 23, 59, 59, 999),
+      $gte: new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0)),
+      $lte: new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)),
     };
   }
 
@@ -74,15 +75,19 @@ export const getAllRevenues = asyncHandler(async (req, res, next) => {
     {
       $match: {
         revenuesDate: {
-          $gte: new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0),
+          $gte: new Date(
+            Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1, 0, 0, 0, 0),
+          ),
           $lte: new Date(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            0,
-            23,
-            59,
-            59,
-            999,
+            Date.UTC(
+              today.getUTCFullYear(),
+              today.getUTCMonth() + 1,
+              0,
+              23,
+              59,
+              59,
+              999,
+            ),
           ),
         },
       },
