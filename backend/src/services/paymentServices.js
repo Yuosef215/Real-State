@@ -72,8 +72,34 @@ if (amountPaid > remainingAmount) {
   });
 });
 
-export const getAllPayments = asyncHandler(async (req, res) => {
-  const payments = await PaymentModel.find()
+// @desc    جلب الدفعات مفلترة بالشهر/السنة
+// @route   GET /api/v1/payments/all_payments?month=9&year=2026
+// @note    من غير params بيرجع دفعات الشهر الحالي بس، و all=true بترجع كل الدفعات
+export const getAllPayments = asyncHandler(async (req, res, next) => {
+  const today = new Date();
+  const showAll = req.query.all === "true";
+
+  const filter = {};
+  let month = null;
+  let year = null;
+
+  if (!showAll) {
+    month = req.query.month ? Number(req.query.month) : today.getMonth() + 1;
+    year = req.query.year ? Number(req.query.year) : today.getFullYear();
+
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
+      return next(new ApiError("الشهر يجب أن يكون رقم بين 1 و 12", 400));
+    }
+
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+      return next(new ApiError("السنة غير صحيحة", 400));
+    }
+
+    filter.month = month;
+    filter.year = year;
+  }
+
+  const payments = await PaymentModel.find(filter)
     .sort({ paymentDate: -1 })
     .populate({
       path: "contract",
@@ -93,10 +119,24 @@ export const getAllPayments = asyncHandler(async (req, res) => {
       ],
     });
 
+  // إجمالي المحصّل في الفترة المطلوبة
+  const totalAmount = payments.reduce(
+    (sum, payment) => sum + payment.amountPaid,
+    0,
+  );
+
   res.status(200).json({
     success: true,
     total: payments.length,
-    message: "تم جلب جميع الدفعات بنجاح",
+    totalAmount,
+    month,
+    year,
+    isAllMonths: showAll,
+    isCurrentMonth:
+      !showAll &&
+      month === today.getMonth() + 1 &&
+      year === today.getFullYear(),
+    message: "تم جلب الدفعات بنجاح",
     data: payments,
   });
 });
