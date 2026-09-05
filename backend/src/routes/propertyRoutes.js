@@ -4,7 +4,8 @@ import {
     getAllProperties,
     getPropertyById,
     updateProperty,
-    deleteProperty
+    deleteProperty,
+    getPropertyDetails
 } from '../services/propertyServices.js';
 import protect from '../middleware/authMiddleware.js';
 
@@ -18,6 +19,7 @@ router.use(protect);
 router.post("/create_property",createProperty);
 router.get("/getAll_properties",getAllProperties);
 router.get("/getProperty/:id",getPropertyById);
+router.get("/property-details/:id",getPropertyDetails);
 router.put("/update_property/:id",updateProperty);
 router.delete("/delete_property/:id",deleteProperty);
 
