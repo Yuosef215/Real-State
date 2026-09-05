@@ -20,6 +20,13 @@ const API_BASE_URL = "https://real-state-5h8r.onrender.com/api/v1";
 const DASHBOARD_ENDPOINT = `${API_BASE_URL}/dashboard/get_dashboard`;
 const DASHBOARD_GETUNPAID = `${API_BASE_URL}/dashboard/get_unpaid`;
 const EXPIRING_CONTRACTS_ENDPOINT = `${API_BASE_URL}/expiring/expiring-contracts`;
+const CHANGE_PASSWORD_ENDPOINT = `${API_BASE_URL}/users/change_password`;
+
+const EMPTY_PASSWORD_FORM = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
 
 // ====== روابط المينيو ======
 const NAV_ITEMS = [
@@ -71,6 +78,88 @@ function Dashboard() {
   const [unpaid, setUnpaid] = useState([]);
 
   const location = useLocation();
+
+  // ====== تغيير كلمة المرور ======
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState(EMPTY_PASSWORD_FORM);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
+
+  const openPasswordModal = () => {
+    setPasswordForm(EMPTY_PASSWORD_FORM);
+    setPasswordError("");
+    setPasswordSuccess("");
+    setShowPasswords(false);
+    setShowPasswordModal(true);
+  };
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPasswordForm(EMPTY_PASSWORD_FORM);
+    setPasswordError("");
+    setPasswordSuccess("");
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    // تحقق مبدئي في المتصفح قبل ما نتعب السيرفر
+    if (
+      !passwordForm.currentPassword ||
+      !passwordForm.newPassword ||
+      !passwordForm.confirmPassword
+    ) {
+      setPasswordError("من فضلك أدخل جميع الحقول");
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("كلمة المرور الجديدة وتأكيدها غير متطابقين");
+      return;
+    }
+
+    if (passwordForm.newPassword === passwordForm.currentPassword) {
+      setPasswordError("كلمة المرور الجديدة يجب أن تكون مختلفة عن الحالية");
+      return;
+    }
+
+    setPasswordSaving(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.put(
+        CHANGE_PASSWORD_ENDPOINT,
+        passwordForm,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+
+      // السيرفر بيرجع توكن جديد عشان الجلسة تفضل شغالة بعد التغيير
+      if (response.data?.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+
+      setPasswordForm(EMPTY_PASSWORD_FORM);
+      setPasswordSuccess("تم تغيير كلمة المرور بنجاح");
+    } catch (err) {
+      setPasswordError(
+        err.response?.data?.message || "تعذر تغيير كلمة المرور، حاول مرة أخرى",
+      );
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -278,10 +367,17 @@ function Dashboard() {
         <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
           <h2 className="text-lg font-bold text-slate-800">لوحة التحكم</h2>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <button
+              onClick={openPasswordModal}
+              className="px-3 md:px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs md:text-sm font-medium rounded-lg transition"
+            >
+              تغيير كلمة المرور
+            </button>
+
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition"
+              className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm font-medium rounded-lg transition"
             >
               تسجيل الخروج
             </button>
@@ -491,6 +587,122 @@ function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* ===== Modal: تغيير كلمة المرور ===== */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-40 p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto">
+
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800">تغيير كلمة المرور</h3>
+              <button
+                onClick={closePasswordModal}
+                className="text-slate-400 text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="p-5 space-y-4">
+              {passwordError && (
+                <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3 text-sm">
+                  {passwordError}
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div className="bg-green-50 text-green-700 border border-green-200 rounded-lg p-3 text-sm">
+                  {passwordSuccess}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  كلمة المرور الحالية
+                </label>
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      currentPassword: e.target.value,
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600"
+                  placeholder="أدخل كلمة المرور الحالية"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  كلمة المرور الجديدة
+                </label>
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      newPassword: e.target.value,
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600"
+                  placeholder="6 أحرف على الأقل"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  تأكيد كلمة المرور الجديدة
+                </label>
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600"
+                  placeholder="أعد كتابة كلمة المرور الجديدة"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showPasswords}
+                  onChange={(e) => setShowPasswords(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                إظهار كلمات المرور
+              </label>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-medium text-sm"
+                >
+                  {passwordSuccess ? "إغلاق" : "إلغاء"}
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordSaving}
+                  className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold text-sm"
+                >
+                  {passwordSaving ? "جاري الحفظ..." : "حفظ كلمة المرور"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ===== Bottom Navigation (Mobile) ===== */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 flex items-center justify-around py-2 z-20">

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaArrowRight } from "react-icons/fa";
 import axios from "axios";
 
 const API_BASE_URL = "https://real-state-5h8r.onrender.com/api/v1";
@@ -8,12 +10,39 @@ const CREATE_EXPENSE = `${API_BASE_URL}/expense/create-expense`;
 const UPDATE_EXPENSE = `${API_BASE_URL}/expense/update-expense`;
 const DELETE_EXPENSE = `${API_BASE_URL}/expense/delete-expense`;
 
+// ====== أسماء الشهور + قائمة آخر 12 شهر للفلتر ======
+const MONTH_NAMES = [
+  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+];
+
+function buildPeriodOptions() {
+  const options = [];
+  const today = new Date();
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    options.push({ month: date.getMonth() + 1, year: date.getFullYear() });
+  }
+  return options;
+}
+
+function currentPeriod() {
+  const today = new Date();
+  return { month: today.getMonth() + 1, year: today.getFullYear(), all: false };
+}
+
+
 function Expenses() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [totalAmount, setTotalAmount] = useState(0);
   const [monthlyAmount, setMonthlyAmount] = useState(0);
+
+  // ====== فلتر الشهر: الافتراضي الشهر الحالي والسيرفر بيرجع بياناته بس ======
+  const [period, setPeriod] = useState(currentPeriod);
+  const [periodAmount, setPeriodAmount] = useState(0);
+  const periodOptions = buildPeriodOptions();
 
   const [search, setSearch] = useState("");
 
@@ -43,12 +72,16 @@ function Expenses() {
               Authorization: `Bearer ${token}`,
             }
           : {},
+        params: period.all
+          ? { all: true }
+          : { month: period.month, year: period.year },
       });
 
       if (response.data.success) {
         setExpenses(response.data.data);
         setTotalAmount(response.data.totalAmount);
         setMonthlyAmount(response.data.monthlyAmount);
+        setPeriodAmount(response.data.periodAmount ?? 0);
       }
     } catch (error) {
       console.log(error);
@@ -59,7 +92,7 @@ function Expenses() {
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [period]);
 
   // =========================
   // Add Expense
@@ -93,7 +126,17 @@ function Expenses() {
         );
       }
 
-      fetchExpenses();
+      // المصروف ممكن يكون بتاريخ شهر تاني، فبنروح للشهر بتاعه عشان ميختفيش
+      if (period.all) {
+        fetchExpenses();
+      } else {
+        const savedDate = form.expenseDate ? new Date(form.expenseDate) : new Date();
+        setPeriod({
+          month: savedDate.getMonth() + 1,
+          year: savedDate.getFullYear(),
+          all: false,
+        });
+      }
 
       setShowModal(false);
 
@@ -164,9 +207,19 @@ function Expenses() {
 
     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
 
-      <h1 className="text-3xl font-bold">
-        إدارة المصروفات
-      </h1>
+      <div className="flex items-center gap-3">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl font-semibold text-sm"
+        >
+          <FaArrowRight />
+          الرئيسية
+        </Link>
+
+        <h1 className="text-3xl font-bold">
+          إدارة المصروفات
+        </h1>
+      </div>
 
       <button
         onClick={() => {
@@ -204,17 +257,19 @@ function Expenses() {
 
       <div className="bg-white rounded-xl shadow p-5">
         <h3 className="text-gray-500 mb-2">
-          مصروفات الشهر
+          {period.all
+            ? "مصروفات كل الشهور"
+            : `مصروفات ${MONTH_NAMES[period.month - 1]} ${period.year}`}
         </h3>
 
         <h2 className="text-3xl font-bold text-blue-600">
-          {monthlyAmount} جنيه
+          {periodAmount} جنيه
         </h2>
       </div>
 
       <div className="bg-white rounded-xl shadow p-5">
         <h3 className="text-gray-500 mb-2">
-          عدد المصروفات
+          {period.all ? "عدد المصروفات" : "عدد مصروفات الشهر"}
         </h3>
 
         <h2 className="text-3xl font-bold">
@@ -223,6 +278,58 @@ function Expenses() {
       </div>
 
     </div>
+
+      {/* ===== فلتر الشهر ===== */}
+
+      <div className="flex flex-wrap items-center gap-2 mb-5 bg-white rounded-xl p-3 shadow">
+        <label className="text-sm font-semibold text-slate-600">
+          عرض شهر:
+        </label>
+
+        <select
+          value={period.all ? "all" : `${period.year}-${period.month}`}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "all") {
+              setPeriod({ ...currentPeriod(), all: true });
+              return;
+            }
+            const [y, m] = value.split("-");
+            setPeriod({ month: Number(m), year: Number(y), all: false });
+          }}
+          className="px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+        >
+          {periodOptions.map((opt) => (
+            <option
+              key={`${opt.year}-${opt.month}`}
+              value={`${opt.year}-${opt.month}`}
+            >
+              {MONTH_NAMES[opt.month - 1]} {opt.year}
+            </option>
+          ))}
+          <option value="all">كل الشهور</option>
+        </select>
+
+        <button
+          onClick={() => setPeriod(currentPeriod())}
+          className="text-sm font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+        >
+          الشهر الحالي
+        </button>
+
+        {!period.all &&
+          (period.month !== currentPeriod().month ||
+            period.year !== currentPeriod().year) && (
+            <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+              بيانات شهر سابق
+            </span>
+          )}
+
+        {loading && (
+          <span className="w-5 h-5 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></span>
+        )}
+      </div>
+
 
     {/* Search */}
 

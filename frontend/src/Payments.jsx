@@ -54,6 +54,27 @@ const NAV_ITEMS = [
   },
 ];
 
+// ====== أسماء الشهور + بناء قائمة آخر 12 شهر لفلتر المدفوعات ======
+const MONTH_NAMES = [
+  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+];
+
+function buildPeriodOptions() {
+  const options = [];
+  const today = new Date();
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    options.push({ month: date.getMonth() + 1, year: date.getFullYear() });
+  }
+  return options;
+}
+
+function currentPeriod() {
+  const today = new Date();
+  return { month: today.getMonth() + 1, year: today.getFullYear(), all: false };
+}
+
 const PAYMENT_STATUSES = [
   { value: "paid", label: "مدفوع" },
   { value: "pending", label: "معلق" },
@@ -88,6 +109,11 @@ function Payments() {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ====== فلتر الشهر: الافتراضي الشهر الحالي، والسيرفر بيرجع دفعاته بس ======
+  const [period, setPeriod] = useState(currentPeriod);
+  const [periodTotal, setPeriodTotal] = useState(0);
+  const periodOptions = buildPeriodOptions();
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -455,9 +481,16 @@ function Payments() {
     setError("");
     try {
       const [paymentsRes, contractsRes] = await Promise.all([
-        axios.get(`${PAYMENTS_BASE}/all_payments`, { headers: authHeaders() }),
+        axios.get(`${PAYMENTS_BASE}/all_payments`, {
+          headers: authHeaders(),
+          params: period.all
+            ? { all: true }
+            : { month: period.month, year: period.year },
+        }),
         axios.get(`${CONTRACTS_BASE}/get_contract`, { headers: authHeaders() }),
       ]);
+
+      setPeriodTotal(paymentsRes.data?.totalAmount ?? 0);
 
       const paymentsList =
         paymentsRes.data?.data ||
@@ -481,7 +514,7 @@ function Payments() {
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [period]);
 
   const openAddModal = () => {
     setEditingId(null);
@@ -550,7 +583,15 @@ function Payments() {
         });
       }
       closeModal();
-      fetchAll();
+
+      // الدفعة الجديدة بتتسجل على الشهر الحالي، فلو كنا بنتفرج على شهر قديم
+      // نرجع للشهر الحالي عشان المستخدم يشوف الدفعة اللي لسه ضايفها
+      const now = currentPeriod();
+      if (period.all || (period.month === now.month && period.year === now.year)) {
+        fetchAll();
+      } else {
+        setPeriod(now);
+      }
     } catch (err) {
       const message = err.response?.data?.message || "حدث خطأ أثناء الحفظ";
       setFormErrors({ general: message });
@@ -614,15 +655,70 @@ function Payments() {
 
       {/* ===== Main Content ===== */}
       <main className="flex-1 min-w-0">
-        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-          <h2 className="text-lg font-bold text-slate-800">المدفوعات</h2>
-          <button
-            onClick={openAddModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <span className="text-lg leading-none">+</span>
-            <span className="hidden sm:inline">إضافة دفعة</span>
-          </button>
+        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 sticky top-0 z-10">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-slate-800">المدفوعات</h2>
+            <button
+              onClick={openAddModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 shrink-0"
+            >
+              <span className="text-lg leading-none">+</span>
+              <span className="hidden sm:inline">إضافة دفعة</span>
+            </button>
+          </div>
+
+          {/* ===== فلتر الشهر ===== */}
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <label className="text-xs font-semibold text-slate-600">
+              عرض دفعات شهر:
+            </label>
+
+            <select
+              value={period.all ? "all" : `${period.year}-${period.month}`}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "all") {
+                  setPeriod({ ...currentPeriod(), all: true });
+                  return;
+                }
+                const [y, m] = value.split("-");
+                setPeriod({ month: Number(m), year: Number(y), all: false });
+              }}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+            >
+              {periodOptions.map((opt) => (
+                <option
+                  key={`${opt.year}-${opt.month}`}
+                  value={`${opt.year}-${opt.month}`}
+                >
+                  {MONTH_NAMES[opt.month - 1]} {opt.year}
+                </option>
+              ))}
+              <option value="all">كل الشهور</option>
+            </select>
+
+            <button
+              onClick={() => setPeriod(currentPeriod())}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              الشهر الحالي
+            </button>
+
+            {!loading && !error && (
+              <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
+                {payments.length} دفعة · إجمالي{" "}
+                {periodTotal.toLocaleString("ar-EG")} ج.م
+              </span>
+            )}
+
+            {!period.all &&
+              (period.month !== currentPeriod().month ||
+                period.year !== currentPeriod().year) && (
+                <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
+                  بيانات شهر سابق
+                </span>
+              )}
+          </div>
         </header>
 
         <div className="p-4 md:p-8 pb-24 md:pb-8">
@@ -640,7 +736,9 @@ function Payments() {
 
           {!loading && !error && payments.length === 0 && (
             <div className="bg-white rounded-2xl p-10 text-center text-slate-400 border border-slate-100">
-              لا توجد مدفوعات مسجلة بعد
+              {period.all
+                ? "لا توجد مدفوعات مسجلة بعد"
+                : `لا توجد مدفوعات في ${MONTH_NAMES[period.month - 1]} ${period.year}`}
             </div>
           )}
 
