@@ -15,7 +15,9 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        // مبيرجعش في أي استعلام إلا لما نطلبه صراحة بـ .select("+password")
+        select: false
     }
 },{timestamps: true,versionKey: false});
 
