@@ -95,6 +95,9 @@ const EMPTY_FORM = {
   contractId: "",
   amount: "",
   status: "pending",
+  // الشهر المدفوع عنه - فاضي يعني الشهر الحالي (الباك اند بيحطه لوحده)
+  month: "",
+  year: "",
 };
 
 function authHeaders() {
@@ -129,6 +132,10 @@ function Payments() {
   const [paymentSummary, setPaymentSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState("");
+
+  // ====== متأخرات الشهور السابقة للعقد المختار ======
+  const [arrears, setArrears] = useState(null);
+  const [arrearsLoading, setArrearsLoading] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -200,12 +207,33 @@ function Payments() {
     }
   };
 
+  // متأخرات الشهور اللي فاتت (بيرجع الشهور اللي لسه عليها متبقي + إجماليها)
+  const fetchArrears = async (contractId) => {
+    if (!contractId) {
+      setArrears(null);
+      return;
+    }
+    setArrearsLoading(true);
+    try {
+      const res = await axios.get(`${PAYMENTS_BASE}/arrears/${contractId}`, {
+        headers: authHeaders(),
+      });
+      setArrears(res.data?.data || null);
+    } catch (err) {
+      setArrears(null);
+    } finally {
+      setArrearsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (form.contractId) {
       fetchPaymentSummary(form.contractId);
+      fetchArrears(form.contractId);
     } else {
       setPaymentSummary(null);
       setSummaryError("");
+      setArrears(null);
     }
   }, [form.contractId]);
 
@@ -261,10 +289,19 @@ function Payments() {
     if (!contract || !info) return;
 
     setEditingId(null); // دايماً إضافة دفعة جديدة، مش تعديل
+
+    // الدفعة الجديدة لازم تتسجل على نفس شهر الدفعة اللي ضغطنا عليها،
+    // مش على الشهر الحالي - مهم لما نكون بنتفرج على شهر قديم
+    const now = currentPeriod();
+    const isCurrent =
+      payment.month === now.month && payment.year === now.year;
+
     setForm({
       contractId: contract._id || contract.id,
       amount: info.remaining,
       status: "pending",
+      month: isCurrent ? "" : payment.month,
+      year: isCurrent ? "" : payment.year,
     });
     setContractSearch(contractDisplayLabel(contract));
     setShowContractOptions(false);
@@ -272,9 +309,37 @@ function Payments() {
     setShowModal(true);
   };
 
-  const printReceipt = (payment) => {
+  const printReceipt = async (payment) => {
     const info = getContractInfo(payment);
+
+    // بنفتح النافذة فوراً وإحنا لسه جوه ضغطة الزرار، عشان مانع النوافذ
+    // المنبثقة ميقفلهاش بعد ما ننتظر رد السيرفر
     const receiptWindow = window.open("", "_blank", "width=340,height=600");
+
+    if (!receiptWindow) {
+      setError("متصفحك منع فتح نافذة الطباعة، فعّل النوافذ المنبثقة وحاول تاني");
+      return;
+    }
+
+    receiptWindow.document.write(
+      `<html dir="rtl"><body style="font-family:Tahoma,sans-serif;text-align:center;padding:40px">جاري تجهيز الوصل...</body></html>`,
+    );
+
+    // متأخرات الشهور السابقة وقت الطباعة (بعد تسجيل الدفعة)
+    const contractId = payment.contract?._id || payment.contract?.id;
+    let arrearsData = null;
+
+    if (contractId) {
+      try {
+        const res = await axios.get(`${PAYMENTS_BASE}/arrears/${contractId}`, {
+          headers: authHeaders(),
+        });
+        arrearsData = res.data?.data || null;
+      } catch (err) {
+        // لو الطلب فشل بنطبع الوصل من غير قسم المتأخرات بدل ما نوقف الطباعة
+        arrearsData = null;
+      }
+    }
 
     // المتبقي من المدة المتبقية بين تاريخ اليوم وتاريخ انتهاء العقد بي الشهر
     const today = new Date();
@@ -292,6 +357,37 @@ function Payments() {
         : `متبقي على إيجار هذا الشهر: ${balanceInfo.remaining.toLocaleString("ar-EG")} ج.م`
       : "";
     const balanceStatusColor = balanceInfo?.isFullyPaid ? "#122218" : "#b91c1c";
+
+    // الشهر اللي الدفعة دي اتسجلت عليه (ممكن يكون شهر سابق لو سداد متأخرات)
+    const paidForLabel =
+      payment.month && payment.year
+        ? `${MONTH_NAMES[payment.month - 1]} ${payment.year}`
+        : "—";
+
+    // قسم المتأخرات في الوصل
+    let arrearsHtml = "";
+
+    if (arrearsData?.hasArrears) {
+      const rows = arrearsData.months
+        .map(
+          (m) =>
+            `<div class="row"><span>${m.label}</span><span>${m.remaining.toLocaleString("ar-EG")} ج.م</span></div>`,
+        )
+        .join("");
+
+      arrearsHtml = `
+        <div class="arrears">
+            <p class="arrears-title">متأخرات شهور سابقة</p>
+            ${rows}
+            <div class="row arrears-total"><span>إجمالي المتأخرات</span><span>${arrearsData.totalArrears.toLocaleString("ar-EG")} ج.م</span></div>
+            <div class="row arrears-total"><span>إجمالي المستحق حتى الآن</span><span>${arrearsData.totalDue.toLocaleString("ar-EG")} ج.م</span></div>
+        </div>`;
+    } else if (arrearsData) {
+      arrearsHtml = `
+        <div class="arrears no-arrears">
+            <p>لا توجد متأخرات من شهور سابقة</p>
+        </div>`;
+    }
 
     const receiptHtml = `
 <!DOCTYPE html>
@@ -391,6 +487,38 @@ function Payments() {
             margin: 2mm 0 3mm;
         }
 
+        .arrears {
+            border: 1px dashed #000;
+            padding: 2mm;
+            margin: 2mm 0 3mm;
+        }
+
+        .arrears-title {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 800;
+            margin-bottom: 1.5mm;
+            padding-bottom: 1mm;
+            border-bottom: 1px dotted #999;
+        }
+
+        .arrears .row {
+            grid-template-columns: 32mm 32mm;
+            padding: 1.2mm 0;
+            font-size: 12px;
+        }
+
+        .arrears-total span {
+            font-weight: 800 !important;
+        }
+
+        .no-arrears {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            border-style: solid;
+        }
+
         .footer {
             text-align: center;
             margin-top: 3mm;
@@ -437,6 +565,7 @@ function Payments() {
         }</span></div>
         <div class="row"><span>المدة المتبقية</span><span>${remainingTime} شهر</span></div>
         <div class="row"><span>طريقة الدفع</span><span>${payment.paymentMethod || "نقدي"}</span></div>
+        <div class="row"><span>الشهر المدفوع عنه</span><span>${paidForLabel}</span></div>
 
         <div class="amount-box">
             <p>المبلغ المدفوع في هذه الدفعة</p>
@@ -449,6 +578,8 @@ function Payments() {
         `
             : ""
         }
+
+        ${arrearsHtml}
 
         <div class="footer">
     <p>شكراً لتعاملكم معنا</p>
@@ -468,12 +599,21 @@ function Payments() {
 
     `;
 
+    // النافذة فيها رسالة الانتظار، فبنفتح المستند من جديد قبل ما نكتب الوصل
+    receiptWindow.document.open();
     receiptWindow.document.write(receiptHtml);
     receiptWindow.document.close();
     receiptWindow.focus();
-    receiptWindow.onload = () => {
+
+    let printed = false;
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
       receiptWindow.print();
     };
+
+    receiptWindow.onload = doPrint;
+    setTimeout(doPrint, 500);
   };
 
   const fetchAll = async () => {
@@ -549,6 +689,7 @@ function Payments() {
     setFormErrors({});
     setContractSearch("");
     setShowContractOptions(false);
+    setArrears(null);
   };
 
   const validateForm = () => {
@@ -566,11 +707,17 @@ function Payments() {
 
     setSaving(true);
 
-    // الباك اند بيحسب الشهر/السنة تلقائي من وقت السيرفر الحالي، فمش محتاجين نبعتهم
+    // لو المستخدم اختار شهر معين (سداد متأخرات) بنبعته، وإلا الباك اند
+    // بيحط الشهر الحالي تلقائي زي ما كان
     const payload = {
       contract: form.contractId,
       amountPaid: Number(form.amount),
     };
+
+    if (form.month && form.year) {
+      payload.month = Number(form.month);
+      payload.year = Number(form.year);
+    }
 
     try {
       if (editingId) {
@@ -1085,6 +1232,127 @@ function Payments() {
                         </span>
                       </div>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* ===== تحذير المتأخرات من شهور سابقة ===== */}
+              {form.contractId && arrearsLoading && (
+                <div className="flex items-center justify-center py-2">
+                  <span className="w-5 h-5 border-2 border-slate-200 border-t-red-500 rounded-full animate-spin"></span>
+                </div>
+              )}
+
+              {!arrearsLoading && arrears?.hasArrears && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-3.5">
+                  <div className="flex items-start gap-2 mb-2.5">
+                    <span className="text-lg leading-none">⚠️</span>
+                    <div>
+                      <p className="font-bold text-red-700 text-sm">
+                        على المستأجر متأخرات من شهور سابقة
+                      </p>
+                      <p className="text-xs text-red-600 mt-0.5">
+                        {arrears.monthsCount} شهر غير مسدد بالكامل
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-sm bg-white/70 rounded-lg p-2.5">
+                    {arrears.months.map((m) => (
+                      <div
+                        key={`${m.year}-${m.month}`}
+                        className="flex justify-between items-center"
+                      >
+                        <span className="text-slate-600">{m.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-red-600">
+                            {m.remaining.toLocaleString("ar-EG")} ج.م
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                month: m.month,
+                                year: m.year,
+                                amount: m.remaining,
+                              })
+                            }
+                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-md font-medium"
+                          >
+                            سداد
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex justify-between pt-1.5 mt-1 border-t border-red-200">
+                      <span className="font-bold text-slate-700">
+                        إجمالي المتأخرات
+                      </span>
+                      <span className="font-bold text-red-700">
+                        {arrears.totalArrears.toLocaleString("ar-EG")} ج.م
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="font-bold text-slate-700">
+                        إجمالي المستحق (مع الشهر الحالي)
+                      </span>
+                      <span className="font-bold text-red-700">
+                        {arrears.totalDue.toLocaleString("ar-EG")} ج.م
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!arrearsLoading && arrears && !arrears.hasArrears && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 font-semibold text-center">
+                  ✓ لا توجد متأخرات من شهور سابقة
+                </div>
+              )}
+
+              {/* ===== الشهر المدفوع عنه ===== */}
+              {arrears && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    الشهر المدفوع عنه
+                  </label>
+                  <select
+                    value={
+                      form.month && form.year
+                        ? `${form.year}-${form.month}`
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (!value) {
+                        setForm({ ...form, month: "", year: "" });
+                        return;
+                      }
+                      const [y, m] = value.split("-");
+                      setForm({ ...form, month: Number(m), year: Number(y) });
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+                  >
+                    <option value="">
+                      {arrears.currentMonth.label} (الشهر الحالي)
+                    </option>
+                    {arrears.months.map((m) => (
+                      <option
+                        key={`${m.year}-${m.month}`}
+                        value={`${m.year}-${m.month}`}
+                      >
+                        {m.label} — متأخرات ({m.remaining.toLocaleString("ar-EG")} ج.م)
+                      </option>
+                    ))}
+                  </select>
+
+                  {form.month && form.year && (
+                    <p className="text-xs text-amber-600 font-semibold mt-1.5">
+                      هذه الدفعة هتتسجل على شهر سابق مش الشهر الحالي
+                    </p>
                   )}
                 </div>
               )}
