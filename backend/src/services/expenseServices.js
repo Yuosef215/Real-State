@@ -1,14 +1,24 @@
 import asyncHandler from "express-async-handler";
 import ExpenseModel from "../models/expense.js";
+import PropertyModel from "../models/property.js";
 import ApiError from "../utils/apiError.js";
 
 // ================== Create Expense ==================
 
 export const createExpense = asyncHandler(async (req, res, next) => {
-  const { title, amount, category, expenseDate } = req.body;
+  const { title, amount, category, expenseDate, property } = req.body;
 
   if (!title || !amount || !category) {
     return next(new ApiError("يجب إدخال جميع البيانات", 400));
+  }
+
+  // العقار اختياري، لكن لو اتبعت لازم يكون موجود فعلاً
+  if (property) {
+    const propertyExists = await PropertyModel.findById(property);
+
+    if (!propertyExists) {
+      return next(new ApiError("العقار غير موجود", 404));
+    }
   }
 
   const expense = await ExpenseModel.create({
@@ -16,12 +26,19 @@ export const createExpense = asyncHandler(async (req, res, next) => {
     amount,
     category,
     expenseDate,
+    property: property || null,
   });
+
+  // بنرجعه معمول populate عشان الفرونت يعرض اسم العقار على طول
+  const created = await ExpenseModel.findById(expense._id).populate(
+    "property",
+    "name address",
+  );
 
   res.status(201).json({
     success: true,
     message: "تم إضافة المصروف بنجاح",
-    data: expense,
+    data: created,
   });
 });
 
@@ -37,6 +54,11 @@ export const getAllExpenses = asyncHandler(async (req, res, next) => {
   const filter = {};
   let month = null;
   let year = null;
+
+  // فلتر اختياري بعقار معين
+  if (req.query.property) {
+    filter.property = req.query.property;
+  }
 
   if (!showAll) {
     month = req.query.month ? Number(req.query.month) : today.getMonth() + 1;
@@ -58,7 +80,9 @@ export const getAllExpenses = asyncHandler(async (req, res, next) => {
     };
   }
 
-  const records = await ExpenseModel.find(filter).sort({ expenseDate: -1 });
+  const records = await ExpenseModel.find(filter)
+    .sort({ expenseDate: -1 })
+    .populate("property", "name address");
 
   // إجمالي الفترة المعروضة
   const periodAmount = records.reduce((sum, record) => sum + record.amount, 0);
@@ -117,7 +141,10 @@ export const getAllExpenses = asyncHandler(async (req, res, next) => {
 // ================== Get Expense By Id ==================
 
 export const getExpenseById = asyncHandler(async (req, res, next) => {
-  const expense = await ExpenseModel.findById(req.params.id);
+  const expense = await ExpenseModel.findById(req.params.id).populate(
+    "property",
+    "name address",
+  );
 
   if (!expense) {
     return next(new ApiError("المصروف غير موجود", 404));
@@ -132,6 +159,17 @@ export const getExpenseById = asyncHandler(async (req, res, next) => {
 // ================== Update Expense ==================
 
 export const updateExpense = asyncHandler(async (req, res, next) => {
+  // لو بيغير العقار لازم نتأكد إنه موجود (قيمة فاضية = نفك الربط)
+  if (req.body.property) {
+    const propertyExists = await PropertyModel.findById(req.body.property);
+
+    if (!propertyExists) {
+      return next(new ApiError("العقار غير موجود", 404));
+    }
+  } else if (req.body.property !== undefined) {
+    req.body.property = null;
+  }
+
   const expense = await ExpenseModel.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -139,7 +177,7 @@ export const updateExpense = asyncHandler(async (req, res, next) => {
       new: true,
       runValidators: true,
     },
-  );
+  ).populate("property", "name address");
 
   if (!expense) {
     return next(new ApiError("المصروف غير موجود", 404));

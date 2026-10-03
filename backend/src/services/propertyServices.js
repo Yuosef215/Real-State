@@ -4,6 +4,7 @@ import asyncHandler from 'express-async-handler';
 import UnitModel from '../models/unit.js';
 import ContractModel from '../models/contract.js';
 import PaymentModel from '../models/payment.js';
+import ExpenseModel from '../models/expense.js';
 
 
 
@@ -172,6 +173,24 @@ export const getPropertyDetails = asyncHandler(async (req, res, next) => {
         paidByContract[key] = (paidByContract[key] || 0) + payment.amountPaid;
     });
 
+    // مصروفات العقار في نفس الشهر المعروض
+    const expensesFilter = {
+        property: id,
+        expenseDate: {
+            $gte: new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0)),
+            $lte: new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)),
+        },
+    };
+
+    const propertyExpenses = await ExpenseModel.find(expensesFilter).sort({
+        expenseDate: -1,
+    });
+
+    const expensesTotal = propertyExpenses.reduce(
+        (sum, expense) => sum + expense.amount,
+        0
+    );
+
     let rentedUnits = 0;
     let availableUnits = 0;
     let paidUnits = 0;
@@ -248,7 +267,10 @@ export const getPropertyDetails = asyncHandler(async (req, res, next) => {
             month,
             year,
             isCurrentMonth,
+            expenses: propertyExpenses,
             summary: {
+                expensesTotal,
+                expensesCount: propertyExpenses.length,
                 totalUnits: units.length,
                 availableUnits,
                 rentedUnits,

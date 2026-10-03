@@ -9,6 +9,7 @@ const GET_EXPENSES = `${API_BASE_URL}/expense/get-all-expense`;
 const CREATE_EXPENSE = `${API_BASE_URL}/expense/create-expense`;
 const UPDATE_EXPENSE = `${API_BASE_URL}/expense/update-expense`;
 const DELETE_EXPENSE = `${API_BASE_URL}/expense/delete-expense`;
+const GET_PROPERTIES = `${API_BASE_URL}/properties/getAll_properties`;
 
 // ====== أسماء الشهور + قائمة آخر 12 شهر للفلتر ======
 const MONTH_NAMES = [
@@ -49,11 +50,15 @@ function Expenses() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // قائمة العقارات عشان نربط المصروف بعقار (اختياري)
+  const [properties, setProperties] = useState([]);
+
   const [form, setForm] = useState({
     title: "",
     category: "",
     amount: "",
     expenseDate: "",
+    property: "",
   });
 
   // =========================
@@ -93,6 +98,25 @@ function Expenses() {
   useEffect(() => {
     fetchExpenses();
   }, [period]);
+
+  // العقارات بتتجاب مرة واحدة، مش مرتبطة بفلتر الشهر
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await axios.get(GET_PROPERTIES, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        setProperties(response.data?.data || []);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchProperties();
+  }, []);
 
   // =========================
   // Add Expense
@@ -147,6 +171,7 @@ function Expenses() {
         category: "",
         amount: "",
         expenseDate: "",
+        property: "",
       });
     } catch (error) {
       console.log(error);
@@ -187,6 +212,8 @@ function Expenses() {
       category: expense.category,
       amount: expense.amount,
       expenseDate: expense.expenseDate?.slice(0, 10),
+      // العقار بيرجع معمول populate فبناخد الـ id منه
+      property: expense.property?._id || expense.property || "",
     });
 
     setShowModal(true);
@@ -230,6 +257,7 @@ function Expenses() {
             category: "",
             amount: "",
             expenseDate: "",
+            property: "",
           });
 
           setShowModal(true);
@@ -355,6 +383,8 @@ function Expenses() {
 
             <th className="p-3">النوع</th>
 
+            <th className="p-3">العقار</th>
+
             <th className="p-3">المبلغ</th>
 
             <th className="p-3">التاريخ</th>
@@ -380,6 +410,16 @@ function Expenses() {
 
               <td className="p-3">
                 {expense.category}
+              </td>
+
+              <td className="p-3">
+                {expense.property ? (
+                  <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                    {expense.property.name}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 text-sm">مصروف عام</span>
+                )}
               </td>
 
               <td className="p-3">
@@ -485,6 +525,31 @@ function Expenses() {
             }
             className="w-full border rounded-lg p-3"
           />
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              العقار (اختياري)
+            </label>
+
+            <select
+              value={form.property}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  property: e.target.value,
+                })
+              }
+              className="w-full border rounded-lg p-3 bg-white"
+            >
+              <option value="">مصروف عام (غير مرتبط بعقار)</option>
+
+              {properties.map((property) => (
+                <option key={property._id} value={property._id}>
+                  {property.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex justify-end gap-3">
 

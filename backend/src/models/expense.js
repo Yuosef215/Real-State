@@ -19,6 +19,12 @@ const expenseSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // العقار اللي المصروف ده عليه - اختياري، null يعني مصروف عام مش مرتبط بعقار
+    property: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Property",
+      default: null,
+    },
   },
   {
     timestamps: true,

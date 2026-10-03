@@ -11,6 +11,15 @@ import { MdPayments } from "react-icons/md"
 // ====== إعدادات الـ API ======
 const API_BASE_URL = "https://real-state-5h8r.onrender.com/api/v1";
 const PROPERTIES_BASE = `${API_BASE_URL}/properties`;
+const CREATE_EXPENSE = `${API_BASE_URL}/expense/create-expense`;
+const DELETE_EXPENSE = `${API_BASE_URL}/expense/delete-expense`;
+
+const EMPTY_EXPENSE_FORM = {
+  title: '',
+  category: '',
+  amount: '',
+  expenseDate: '',
+};
 const size = 25
 const NAV_ITEMS = [
   { label: 'الرئيسية', path: '/dashboard', icon: <FaHome size={size} color='black'/> },
@@ -119,10 +128,89 @@ function Properties() {
     };
   }, [detailsTarget, period]);
 
+  // ====== إضافة مصروف على العقار من جوه مودال التفاصيل ======
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [expenseForm, setExpenseForm] = useState(EMPTY_EXPENSE_FORM);
+  const [expenseError, setExpenseError] = useState('');
+  const [expenseSaving, setExpenseSaving] = useState(false);
+
+  // بنعيد تحميل تفاصيل العقار بعد أي تغيير في مصروفاته
+  const reloadDetails = async () => {
+    if (!detailsTarget) return;
+    try {
+      const res = await axios.get(
+        `${PROPERTIES_BASE}/property-details/${detailsTarget._id || detailsTarget.id}`,
+        {
+          headers: authHeaders(),
+          params: { month: period.month, year: period.year },
+        }
+      );
+      setDetails(res.data?.data || null);
+    } catch (err) {
+      setDetailsError('تعذر تحديث تفاصيل العقار');
+    }
+  };
+
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    setExpenseError('');
+
+    if (!expenseForm.title.trim() || !expenseForm.category.trim() || !expenseForm.amount) {
+      setExpenseError('من فضلك أدخل اسم المصروف والتفاصيل والمبلغ');
+      return;
+    }
+
+    if (Number(expenseForm.amount) <= 0) {
+      setExpenseError('المبلغ يجب أن يكون أكبر من صفر');
+      return;
+    }
+
+    setExpenseSaving(true);
+
+    try {
+      await axios.post(
+        CREATE_EXPENSE,
+        {
+          title: expenseForm.title.trim(),
+          category: expenseForm.category.trim(),
+          amount: Number(expenseForm.amount),
+          expenseDate: expenseForm.expenseDate || undefined,
+          // ده اللي بيربط المصروف بالعقار المفتوح
+          property: detailsTarget._id || detailsTarget.id,
+        },
+        { headers: authHeaders() }
+      );
+
+      setExpenseForm(EMPTY_EXPENSE_FORM);
+      setShowExpenseForm(false);
+      await reloadDetails();
+    } catch (err) {
+      setExpenseError(err.response?.data?.message || 'تعذر إضافة المصروف، حاول مرة أخرى');
+    } finally {
+      setExpenseSaving(false);
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    if (!window.confirm('هل تريد حذف هذا المصروف؟')) return;
+
+    try {
+      await axios.delete(`${DELETE_EXPENSE}/${expenseId}`, {
+        headers: authHeaders(),
+      });
+      await reloadDetails();
+    } catch (err) {
+      setDetailsError('تعذر حذف المصروف، حاول مرة أخرى');
+    }
+  };
+
   const openDetails = (property) => {
     setDetails(null);
     setDetailsError('');
     setUnitsFilter('all');
+    setShowExpenseForm(false);
+    setExpenseForm(EMPTY_EXPENSE_FORM);
+    setExpenseError('');
     setPeriod(currentPeriod());
     setDetailsTarget(property);
   };
@@ -132,6 +220,9 @@ function Properties() {
     setDetails(null);
     setDetailsError('');
     setUnitsFilter('all');
+    setShowExpenseForm(false);
+    setExpenseForm(EMPTY_EXPENSE_FORM);
+    setExpenseError('');
     setPeriod(currentPeriod());
   };
 
@@ -706,6 +797,155 @@ function Properties() {
                       </table>
                     </div>
                   )}
+
+                  {/* ===== مصروفات العقار ===== */}
+                  <div className="mt-8">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                      <div>
+                        <h4 className="font-bold text-slate-800">
+                          مصروفات العقار - {MONTH_NAMES[details.month - 1]} {details.year}
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {details.summary.expensesCount ?? 0} مصروف · إجمالي{' '}
+                          <span className="font-bold text-red-600">
+                            {(details.summary.expensesTotal ?? 0).toLocaleString('ar-EG')} ج.م
+                          </span>
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setExpenseError('');
+                          setShowExpenseForm((v) => !v);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg"
+                      >
+                        {showExpenseForm ? 'إلغاء' : '+ إضافة مصروف للعقار'}
+                      </button>
+                    </div>
+
+                    {/* نموذج الإضافة */}
+                    {showExpenseForm && (
+                      <form
+                        onSubmit={handleAddExpense}
+                        className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-3"
+                      >
+                        {expenseError && (
+                          <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3 text-sm">
+                            {expenseError}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            placeholder="اسم المصروف"
+                            value={expenseForm.title}
+                            onChange={(e) =>
+                              setExpenseForm({ ...expenseForm, title: e.target.value })
+                            }
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+                          />
+
+                          <input
+                            type="text"
+                            placeholder="التفاصيل / النوع"
+                            value={expenseForm.category}
+                            onChange={(e) =>
+                              setExpenseForm({ ...expenseForm, category: e.target.value })
+                            }
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+                          />
+
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="المبلغ"
+                            value={expenseForm.amount}
+                            onChange={(e) =>
+                              setExpenseForm({ ...expenseForm, amount: e.target.value })
+                            }
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+                          />
+
+                          <input
+                            type="date"
+                            value={expenseForm.expenseDate}
+                            onChange={(e) =>
+                              setExpenseForm({ ...expenseForm, expenseDate: e.target.value })
+                            }
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
+                          />
+                        </div>
+
+                        <p className="text-xs text-slate-500">
+                          المصروف ده هيتسجل على عقار &quot;{detailsTarget.name}&quot; وهيظهر في قسم
+                          المصروفات كمان
+                        </p>
+
+                        <button
+                          type="submit"
+                          disabled={expenseSaving}
+                          className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold text-sm"
+                        >
+                          {expenseSaving ? 'جاري الحفظ...' : 'حفظ المصروف'}
+                        </button>
+                      </form>
+                    )}
+
+                    {/* قائمة المصروفات */}
+                    {!details.expenses && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center text-amber-700 text-sm">
+                        السيرفر الحالي لا يدعم مصروفات العقارات بعد — ارفع تحديث الباك اند
+                        عشان القسم ده يشتغل
+                      </div>
+                    )}
+
+                    {details.expenses && details.expenses.length === 0 && (
+                      <div className="bg-slate-50 rounded-xl p-8 text-center text-slate-400 text-sm">
+                        لا توجد مصروفات على هذا العقار في {MONTH_NAMES[details.month - 1]}{' '}
+                        {details.year}
+                      </div>
+                    )}
+
+                    {details.expenses && details.expenses.length > 0 && (
+                      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-slate-50 text-slate-500 text-right">
+                              <th className="py-3 px-4 font-semibold">المصروف</th>
+                              <th className="py-3 px-4 font-semibold">التفاصيل</th>
+                              <th className="py-3 px-4 font-semibold">المبلغ</th>
+                              <th className="py-3 px-4 font-semibold">التاريخ</th>
+                              <th className="py-3 px-4 font-semibold"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {details.expenses.map((ex) => (
+                              <tr key={ex._id} className="border-t border-slate-100 hover:bg-slate-50">
+                                <td className="py-3 px-4 font-medium text-slate-800">{ex.title}</td>
+                                <td className="py-3 px-4 text-slate-600">{ex.category}</td>
+                                <td className="py-3 px-4 font-bold text-red-600">
+                                  {ex.amount.toLocaleString('ar-EG')} ج.م
+                                </td>
+                                <td className="py-3 px-4 text-slate-600">
+                                  {ex.expenseDate?.substring(0, 10)}
+                                </td>
+                                <td className="py-3 px-4">
+                                  <button
+                                    onClick={() => handleDeleteExpense(ex._id)}
+                                    className="text-red-600 hover:underline font-medium"
+                                  >
+                                    حذف
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
