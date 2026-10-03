@@ -612,7 +612,7 @@ function Properties() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                     <div className="bg-white rounded-xl p-3 border border-slate-200">
                       <p className="text-xs text-slate-500 mb-1">
                         الإيجار المتوقع في {MONTH_NAMES[details.month - 1]}
@@ -637,10 +637,22 @@ function Properties() {
                         {details.summary.remainingThisMonth.toLocaleString('ar-EG')} ج.م
                       </p>
                     </div>
+
+                    <div className="bg-orange-50 rounded-xl p-3 border border-orange-200">
+                      <p className="text-xs text-orange-700 mb-1">
+                        مصروفات {MONTH_NAMES[details.month - 1]}
+                      </p>
+                      <p className="text-lg font-bold text-orange-700">
+                        {(details.summary.expensesTotal ?? 0).toLocaleString('ar-EG')} ج.م
+                      </p>
+                      <p className="text-[11px] text-orange-600 mt-0.5">
+                        {details.summary.expensesCount ?? 0} مصروف على العقار
+                      </p>
+                    </div>
                   </div>
 
-                  {/* ===== فلاتر الوحدات ===== */}
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  {/* ===== فلاتر الوحدات + زرار تسجيل مصروف ===== */}
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
                     {[
                       { key: 'all', label: `الكل (${details.summary.totalUnits})` },
                       { key: 'available', label: `متاحة (${details.summary.availableUnits})` },
@@ -663,7 +675,90 @@ function Properties() {
                         {f.label}
                       </button>
                     ))}
+
+                    <button
+                      onClick={() => {
+                        setExpenseError('');
+                        setShowExpenseForm((v) => !v);
+                      }}
+                      className={`text-xs font-bold px-4 py-1.5 rounded-full border transition ms-auto ${
+                        showExpenseForm
+                          ? 'bg-slate-100 text-slate-600 border-slate-300'
+                          : 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
+                      }`}
+                    >
+                      {showExpenseForm ? 'إلغاء تسجيل المصروف' : '+ تسجيل مصروف على العقار'}
+                    </button>
                   </div>
+
+                  {/* نموذج تسجيل مصروف على العقار */}
+                  {showExpenseForm && (
+                    <form
+                      onSubmit={handleAddExpense}
+                      className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 space-y-3"
+                    >
+                      {expenseError && (
+                        <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3 text-sm">
+                          {expenseError}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="اسم المصروف"
+                          value={expenseForm.title}
+                          onChange={(e) =>
+                            setExpenseForm({ ...expenseForm, title: e.target.value })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-orange-500 bg-white"
+                        />
+
+                        <input
+                          type="text"
+                          placeholder="التفاصيل / النوع"
+                          value={expenseForm.category}
+                          onChange={(e) =>
+                            setExpenseForm({ ...expenseForm, category: e.target.value })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-orange-500 bg-white"
+                        />
+
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="المبلغ"
+                          value={expenseForm.amount}
+                          onChange={(e) =>
+                            setExpenseForm({ ...expenseForm, amount: e.target.value })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-orange-500 bg-white"
+                        />
+
+                        <input
+                          type="date"
+                          value={expenseForm.expenseDate}
+                          onChange={(e) =>
+                            setExpenseForm({ ...expenseForm, expenseDate: e.target.value })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-orange-500 bg-white"
+                        />
+                      </div>
+
+                      <p className="text-xs text-slate-500">
+                        المصروف ده هيتسجل على عقار &quot;{detailsTarget.name}&quot; وهيظهر في قسم
+                        المصروفات كمان
+                      </p>
+
+                      <button
+                        type="submit"
+                        disabled={expenseSaving}
+                        className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white font-bold text-sm"
+                      >
+                        {expenseSaving ? 'جاري الحفظ...' : 'حفظ المصروف'}
+                      </button>
+                    </form>
+                  )}
 
                   {visibleUnits.length === 0 && (
                     <div className="bg-slate-50 rounded-xl p-8 text-center text-slate-400 text-sm">
@@ -800,100 +895,10 @@ function Properties() {
 
                   {/* ===== مصروفات العقار ===== */}
                   <div className="mt-8">
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                      <div>
-                        <h4 className="font-bold text-slate-800">
-                          مصروفات العقار - {MONTH_NAMES[details.month - 1]} {details.year}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {details.summary.expensesCount ?? 0} مصروف · إجمالي{' '}
-                          <span className="font-bold text-red-600">
-                            {(details.summary.expensesTotal ?? 0).toLocaleString('ar-EG')} ج.م
-                          </span>
-                        </p>
-                      </div>
+                    <h4 className="font-bold text-slate-800 mb-3">
+                      مصروفات العقار - {MONTH_NAMES[details.month - 1]} {details.year}
+                    </h4>
 
-                      <button
-                        onClick={() => {
-                          setExpenseError('');
-                          setShowExpenseForm((v) => !v);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg"
-                      >
-                        {showExpenseForm ? 'إلغاء' : '+ إضافة مصروف للعقار'}
-                      </button>
-                    </div>
-
-                    {/* نموذج الإضافة */}
-                    {showExpenseForm && (
-                      <form
-                        onSubmit={handleAddExpense}
-                        className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-3"
-                      >
-                        {expenseError && (
-                          <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3 text-sm">
-                            {expenseError}
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <input
-                            type="text"
-                            placeholder="اسم المصروف"
-                            value={expenseForm.title}
-                            onChange={(e) =>
-                              setExpenseForm({ ...expenseForm, title: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
-                          />
-
-                          <input
-                            type="text"
-                            placeholder="التفاصيل / النوع"
-                            value={expenseForm.category}
-                            onChange={(e) =>
-                              setExpenseForm({ ...expenseForm, category: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
-                          />
-
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="المبلغ"
-                            value={expenseForm.amount}
-                            onChange={(e) =>
-                              setExpenseForm({ ...expenseForm, amount: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
-                          />
-
-                          <input
-                            type="date"
-                            value={expenseForm.expenseDate}
-                            onChange={(e) =>
-                              setExpenseForm({ ...expenseForm, expenseDate: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-600 bg-white"
-                          />
-                        </div>
-
-                        <p className="text-xs text-slate-500">
-                          المصروف ده هيتسجل على عقار &quot;{detailsTarget.name}&quot; وهيظهر في قسم
-                          المصروفات كمان
-                        </p>
-
-                        <button
-                          type="submit"
-                          disabled={expenseSaving}
-                          className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold text-sm"
-                        >
-                          {expenseSaving ? 'جاري الحفظ...' : 'حفظ المصروف'}
-                        </button>
-                      </form>
-                    )}
-
-                    {/* قائمة المصروفات */}
                     {!details.expenses && (
                       <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center text-amber-700 text-sm">
                         السيرفر الحالي لا يدعم مصروفات العقارات بعد — ارفع تحديث الباك اند
